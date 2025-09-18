@@ -1,10 +1,8 @@
-// ...existing code...
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Button, Text, TextInput, View } from 'react-native';
 
-// ...existing code...
 export default function Index() {
   const [message, setMessage] = useState('');
   const [key, setKey] = useState('');
@@ -89,4 +87,3 @@ export default function Index() {
     </View>
   );
 }
-// ...existing code...
