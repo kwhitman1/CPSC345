@@ -34,7 +34,7 @@ export default function HistoryScreen() {
             onPress={() => router.push({ pathname: '/detail', params: { id: item.id } })}
             style={styles.item}
           >
-            <Text>{item.original}</Text>
+            <Text>{item.original} {"->"} {item.result}</Text>
             <Text style={styles.meta}>{new Date(item.date).toLocaleString()}</Text>
           </Pressable>
         )}
