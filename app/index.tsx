@@ -1,12 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Button, Text, TextInput, View } from 'react-native';
+import { Button, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function Index() {
   const [message, setMessage] = useState('');
-  const [key, setKey] = useState('');
+  const [key, setKey] = useState('1');
   const [result, setResult] = useState('');
+  const [showKeyModal, setShowKeyModal] = useState(false);
   const router = useRouter();
 
   const calcEncrypt = () => {
@@ -66,13 +67,37 @@ export default function Index() {
         onChangeText={setMessage}
         style={{ borderWidth: 1, padding: 10, width: '90%', marginVertical: 10 }}
       />
-      <Text>Enter the encryption key here</Text>
-      <TextInput
-        value={key}
-        onChangeText={setKey}
-        keyboardType="numeric"
-        style={{ borderWidth: 1, padding: 10, width: '90%', marginVertical: 10 }}
-      />
+      <Text>Select the encryption key here</Text>
+      <Pressable style={styles.pickerContainer} onPress={() => setShowKeyModal(true)}>
+        <Text>{key}</Text>
+      </Pressable>
+
+      <Modal visible={showKeyModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={{ fontWeight: '600', marginBottom: 8 }}>Select key</Text>
+            <FlatList
+              data={Array.from({ length: 25 }).map((_, i) => String(i + 1))}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <Pressable
+                  onPress={() => {
+                    setKey(item);
+                    setShowKeyModal(false);
+                  }}
+                  style={styles.option}
+                >
+                  <Text style={styles.optionText}>{item}</Text>
+                </Pressable>
+              )}
+            />
+            <View style={{ marginTop: 12 }}>
+              <Button title="Cancel" onPress={() => setShowKeyModal(false)} />
+            </View>
+          </View>
+        </View>
+      </Modal>
+      
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
         <Button title="Encrypt" onPress={calcEncrypt} />
         <View style={{ width: 10 }} />
@@ -87,3 +112,11 @@ export default function Index() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  pickerContainer: { width: '10%', borderWidth: 1, borderColor: '#ccc', borderRadius: 6, overflow: 'hidden', marginVertical: 10},
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', padding: 16 },
+  modalContent: { backgroundColor: '#fff', borderRadius: 8, maxHeight: '70%', padding: 12,},
+  option: { paddingVertical: 12, paddingHorizontal: 8 },
+  optionText: { fontSize: 16 },
+});
