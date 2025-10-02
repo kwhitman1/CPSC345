@@ -5,10 +5,7 @@ import { Alert, FlatList, Platform, Pressable, StyleSheet, Text, View } from 're
 
 type HistoryItem = {
   id: string;
-  type: 'encrypt' | 'decrypt';
-  original: string;
-  key: string;
-  result: string;
+  cipher: string;
   date: string;
 };
 
@@ -62,7 +59,7 @@ export default function HistoryScreen() {
         renderItem={({ item }) => (
           <Pressable style={styles.item}>
             <Pressable onPress={() => router.push({ pathname: '/detail', params: { id: item.id } })} style={{ flex: 1 }}>
-              <Text>{item.original}</Text>
+              <Text>{item.cipher}</Text>
               <Text style={styles.meta}>{new Date(item.date).toLocaleString()}</Text>
             </Pressable>
             <Pressable onPress={() => toggle(item.id)} style={styles.checkbox}>

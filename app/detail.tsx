@@ -1,20 +1,19 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Location from 'expo-location';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Button, StyleSheet, Text, View } from 'react-native';
 
 type HistoryItem = {
   id: string;
-  type: 'encrypt' | 'decrypt';
-  original: string;
-  key: string;
-  result: string;
+  cipher: string;
   date: string;
 };
 
 export default function Detail() {
   const { id } = useLocalSearchParams() as { id?: string };
   const [item, setItem] = useState<HistoryItem | null>(null);
+  const [decrypted, setDecrypted] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -37,6 +36,19 @@ export default function Detail() {
     router.back();
   };
 
+  const decrypt = (text: string, shift: number) => {
+    return text
+      .split('')
+      .map((char) => {
+        const number = char.charCodeAt(0);
+        if (number >= 97 && number <= 122) {
+          return String.fromCharCode(((number - 97 + 26 - (shift % 26)) % 26) + 97);
+        }
+        return char;
+      })
+      .join('');
+  };
+
   const confirmDelete = () => {
     Alert.alert(
       'Delete Message',
@@ -46,6 +58,31 @@ export default function Detail() {
         { text: 'Delete', style: 'destructive', onPress: deleteItem },
       ]
     );
+  };
+
+  const getKeyFromLocation = (lat: number, lon: number) => {
+    const latR = Math.round(lat * 10000);
+    const lonR = Math.round(lon * 10000);
+    const mixed = Math.abs((latR * 73856093) ^ (lonR * 19349663));
+    return (mixed % 25) + 1;
+  };
+
+  const calcDecryptWithLocation = async () => {
+    if (!item) return;
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Location required', 'Location permission is required to get the encryption key for decryption.');
+        return;
+      }
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });
+      const { latitude, longitude } = pos.coords;
+      const key = getKeyFromLocation(latitude, longitude);
+      const plain = decrypt(item.cipher, key);
+      setDecrypted(plain);
+    } catch (err) {
+      Alert.alert('Error', 'Unable to obtain location.');
+    }
   };
 
   if (!item) {
@@ -58,14 +95,19 @@ export default function Detail() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Original</Text>
-      <Text style={styles.value}>{item.original}</Text>
+      <Text style={styles.label}>Encrypted</Text>
+      <Text style={styles.value}>{item.cipher}</Text>
 
-      <Text style={styles.label}>Key</Text>
-      <Text style={styles.value}>{item.key}</Text>
+      <View style={{ marginTop: 12 }}>
+        <Button title="Decrypt using my current location" onPress={calcDecryptWithLocation} />
+      </View>
 
-      <Text style={styles.label}>Result</Text>
-      <Text style={styles.value}>{item.result}</Text>
+      {decrypted ? (
+        <>
+          <Text style={styles.label}>Decrypted</Text>
+          <Text style={styles.value}>{decrypted}</Text>
+        </>
+      ) : null}
 
       <View style={{ marginTop: 20 }}>
         <Button title="Delete" color="red" onPress={confirmDelete} />

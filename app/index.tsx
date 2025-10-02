@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function Index() {
@@ -9,27 +10,35 @@ export default function Index() {
   const [result, setResult] = useState('');
   const [showKeyModal, setShowKeyModal] = useState(false);
   const router = useRouter();
+  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [waitMessage, setWaitMessage] = useState('Waiting...');
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setWaitMessage('Permission to access location was denied');
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({accuracy: Location.Accuracy.Highest})
+      setLocation(location);
+      setWaitMessage(JSON.stringify(location))
+    })();
+  }, []);
 
   const calcEncrypt = () => {
     const shift = parseInt(key, 10);
     if (!isNaN(shift)) {
   const res = encrypt(message, shift);
   setResult(res);
-  saveHistory('encrypt', message, key, res);
+  saveHistory(res);
+  setMessage('');
     }
   };
 
-  const calcDecrypt = () => {
-    const shift = parseInt(key, 10);
-    if (!isNaN(shift)) {
-      const res = decrypt(message, shift);
-      setResult(res);
-      saveHistory('decrypt', message, key, res);
-    }
-  };
-
-  const saveHistory = async (type: 'encrypt' | 'decrypt', original: string, keyVal: string, resultVal: string) => {
-    const item = { id: Date.now().toString(), type, original, key: keyVal, result: resultVal, date: new Date().toISOString() };
+  const saveHistory = async (cipher: string) => {
+    const item = { id: Date.now().toString(), cipher, date: new Date().toISOString() };
     const raw = await AsyncStorage.getItem('history');
     const arr = raw ? JSON.parse(raw) : [];
     arr.unshift(item);
@@ -54,6 +63,7 @@ export default function Index() {
   };
 
   return (
+    
     <View
       style={{
         flex: 0.5,
@@ -99,9 +109,7 @@ export default function Index() {
       </Modal>
       
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
-        <Button title="Encrypt" onPress={calcEncrypt} />
-        <View style={{ width: 10 }} />
-        <Button title="Decrypt" onPress={calcDecrypt} />
+  <Button title="Encrypt" onPress={calcEncrypt} />
       </View>
       <Text>{'\n'}</Text>
       <Text>The results will appear here</Text>
@@ -109,7 +117,10 @@ export default function Index() {
       <View style={{ marginTop: 12 }}>
         <Button title="View History" onPress={() => router.push('/history')} />
       </View>
+      <Text>{'\n'}</Text>
+      <Text>{waitMessage}</Text>
     </View>
+    
   );
 }
 
