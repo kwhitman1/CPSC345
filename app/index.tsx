@@ -44,7 +44,7 @@ export default function Index() {
     arr.unshift(item);
     await AsyncStorage.setItem('history', JSON.stringify(arr));
   };
-
+//
   const encrypt = (text: string, shift: number): string => {
     return text
       .split('')
