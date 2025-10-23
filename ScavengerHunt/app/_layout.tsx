@@ -60,7 +60,7 @@ export default function RootLayout() {
           const isAuthScreen = /SignIn|SignUp/i.test(name);
           if (isAuthScreen) return undefined;
           return (
-            <View style={{ padding: 8 }}>
+            <View>
               <Button title="Logout" onPress={onLogout} />
             </View>
           );

@@ -74,7 +74,7 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Your Hunts</Text>
+      <Text style={styles.heading}>Your Hunts:</Text>
 
       <FlatList data={hunts} keyExtractor={(i) => i.id} renderItem={renderItem} ListEmptyComponent={<Text>No hunts yet</Text>} />
 
