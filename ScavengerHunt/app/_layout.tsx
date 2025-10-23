@@ -1,24 +1,71 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import { Stack, useRouter } from "expo-router";
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, View, Button, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { onAuthStateChanged, User, signOut } from 'firebase/auth';
+import { auth } from './firebaseConfig';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const router = useRouter();
+  const [checking, setChecking] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+  const [didRedirect, setDidRedirect] = useState(false);
+
+  useEffect(() => {
+    console.log('[_layout] mounting and registering auth listener');
+    const unsub = onAuthStateChanged(auth, (u) => {
+      console.log('[_layout] auth state changed, user=', u);
+      setUser(u);
+      setChecking(false);
+    });
+    return unsub;
+  }, []);
+
+  // Once we've checked auth, perform a one-time redirect so the router stack exists
+  useEffect(() => {
+    if (!checking && !didRedirect) {
+      if (user) {
+        router.replace('/' as any);
+      } else {
+        router.replace('/SignIn' as any);
+      }
+      setDidRedirect(true);
+    }
+  }, [checking, user, didRedirect]);
+
+  if (checking) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  const onLogout = async () => {
+    try {
+      await signOut(auth);
+      await AsyncStorage.removeItem('userToken');
+      router.replace('/SignIn' as any);
+    } catch (e: any) {
+      Alert.alert('Logout failed', e?.message ?? String(e));
+    }
+  };
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Stack
+      // use a function so we can hide the logout button on auth screens
+      screenOptions={({ route }) => ({
+        headerRight: () => {
+          const name = route?.name ?? '';
+          const isAuthScreen = /SignIn|SignUp/i.test(name);
+          if (isAuthScreen) return undefined;
+          return (
+            <View style={{ padding: 8 }}>
+              <Button title="Logout" onPress={onLogout} />
+            </View>
+          );
+        },
+      })}
+    />
   );
 }
