@@ -64,11 +64,10 @@ export default function HuntDetail() {
     setDeleting(true);
     try {
       await deleteDoc(doc(db, 'hunts', huntId as string));
-      // Navigate back to index. Use replace then push as a robust fallback.
       try {
         router.replace('/' as any);
       } catch {
-        try { router.push('/' as any); } catch { /* ignore */ }
+        try { router.push('/' as any); } catch { }
       }
     } catch (e: any) {
       Alert.alert('Delete failed', e?.message ?? String(e));

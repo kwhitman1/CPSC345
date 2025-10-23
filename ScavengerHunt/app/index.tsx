@@ -45,7 +45,6 @@ export default function Index() {
 
     setLoading(true);
     try {
-      // check duplicate for this user
       const q = query(collection(db, 'hunts'), where('userId', '==', user.uid), where('name', '==', name));
       const existing = await getDocs(q);
       if (!existing.empty) {

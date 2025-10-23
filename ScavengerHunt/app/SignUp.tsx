@@ -38,7 +38,6 @@ export default function SignUp() {
         email: email.trim(),
         createdAt: new Date().toISOString(),
       });
-      // save token/session to AsyncStorage
       try {
         const token = await userCred.user.getIdToken();
         await AsyncStorage.setItem('userToken', token);

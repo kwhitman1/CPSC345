@@ -21,7 +21,6 @@ export default function RootLayout() {
     return unsub;
   }, []);
 
-  // Once we've checked auth, perform a one-time redirect so the router stack exists
   useEffect(() => {
     if (!checking && !didRedirect) {
       if (user) {
@@ -53,7 +52,6 @@ export default function RootLayout() {
 
   return (
     <Stack
-      // use a function so we can hide the logout button on auth screens
       screenOptions={({ route }) => ({
         headerRight: () => {
           const name = route?.name ?? '';

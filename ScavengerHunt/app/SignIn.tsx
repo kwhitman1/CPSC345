@@ -22,7 +22,6 @@ export default function SignIn() {
     setLoading(true);
     try {
       const userCred = await signInWithEmailAndPassword(auth, email.trim(), password);
-      // store token/session
       try {
         const token = await userCred.user.getIdToken();
         await AsyncStorage.setItem('userToken', token);
