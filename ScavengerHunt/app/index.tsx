@@ -79,9 +79,8 @@ export default function Index() {
 
       <View style={{ height: 12 }} />
       <TextInput placeholder="New hunt name" value={newName} onChangeText={setNewName} style={styles.input} />
-      <Button title={loading ? 'Creating...' : 'Create Hunt'} onPress={createHunt} disabled={loading} />
+      <Button title={'Create Hunt'} onPress={createHunt} />
       <View style={{ height: 24 }} />
-      <Button title="Logout" onPress={onLogout} />
     </View>
   );
 }
