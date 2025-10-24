@@ -4,6 +4,7 @@ import { ActivityIndicator, View, Button, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { auth } from './firebaseConfig';
+import { subscribe } from './eventBus';
 
 export default function RootLayout() {
   const router = useRouter();
