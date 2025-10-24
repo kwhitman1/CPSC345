@@ -4,7 +4,6 @@ import { ActivityIndicator, View, Button, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { auth } from './firebaseConfig';
-import { subscribe } from './eventBus';
 
 export default function RootLayout() {
   const router = useRouter();
@@ -32,6 +31,8 @@ export default function RootLayout() {
       setDidRedirect(true);
     }
   }, [checking, user, didRedirect]);
+
+  // no app-level subscriptions here
 
   if (checking) {
     return (
