@@ -17,7 +17,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import app from "@/lib/firebase-config";
-
+//
 export default function ScavengerHunt() {
   const { user } = useSession();
   const router = useRouter();
