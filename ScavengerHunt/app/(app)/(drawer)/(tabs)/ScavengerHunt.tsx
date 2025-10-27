@@ -104,7 +104,7 @@ export default function ScavengerHunt() {
             style={{ padding: 12, borderBottomWidth: 1, borderColor: "#eee" }}
           >
             <Text style={{ fontSize: 16 }}>{item.name}</Text>
-            <Text style={{ fontSize: 12, color: "#666" }}>{item.id}</Text>
+            
           </Pressable>
         )}
       />
