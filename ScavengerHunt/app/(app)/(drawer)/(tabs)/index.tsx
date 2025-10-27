@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { useSession } from "@/context";
 import { router } from "expo-router";
-
+//
 /**
  * TabsIndexScreen displays the main home screen content with personalized welcome message
  * @returns {JSX.Element} Home screen component
