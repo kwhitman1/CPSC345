@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, FlatList, Pressable, Alert,} from "react-native";
+import { View, Text, TextInput, FlatList, Pressable, Alert, Switch } from "react-native";
 import { useSession } from "@/context";
 import { useRouter } from "expo-router";
 import { useDispatch, useSelector } from 'react-redux';
 import { setHunts, addHunt, removeHunt } from '@/store/huntsSlice';
 import { RootState } from '@/store/store';
-import { getFirestore, collection, query, where, onSnapshot, addDoc, getDocs, orderBy, serverTimestamp, writeBatch, doc, deleteDoc } from "firebase/firestore";
-import app from "@/lib/firebase-config";
+import { getFirestore, collection, query, where, onSnapshot, addDoc, getDocs, orderBy, serverTimestamp, writeBatch, doc, deleteDoc, updateDoc } from "firebase/firestore";
+import app, { getFirebaseAuth } from "@/lib/firebase-config";
 
 export default function ScavengerHunt() {
   const { user } = useSession();
@@ -19,7 +19,7 @@ export default function ScavengerHunt() {
   const [multiMode, setMultiMode] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+  if (!user) return;
     const db = getFirestore(app);
     const q = query(
       collection(db, "hunts"),
@@ -37,7 +37,7 @@ export default function ScavengerHunt() {
   }, [user]);
 
   const handleCreate = async () => {
-    if (!user) return;
+  if (!user) return;
     const trimmed = name.trim();
     if (!trimmed) return Alert.alert("Name required", "Please enter a hunt name");
     if (trimmed.length > 255) return Alert.alert("Name too long", "Max 255 characters");
@@ -45,6 +45,7 @@ export default function ScavengerHunt() {
     setCreating(true);
     try {
       const db = getFirestore(app);
+      // default visibility false for new hunts
       const existing = await getDocs(
         query(collection(db, "hunts"), where("userId", "==", user.uid), where("name", "==", trimmed))
       );
@@ -57,6 +58,7 @@ export default function ScavengerHunt() {
       const docRef = await addDoc(collection(db, "hunts"), {
         name: trimmed,
         userId: user.uid,
+        isVisible: false,
         createdAt: serverTimestamp(),
       });
 
@@ -77,7 +79,6 @@ export default function ScavengerHunt() {
 
   const clearSelection = () => {
     setSelected({});
-    setMultiMode(false);
   };
 
   const handleBulkDelete = async () => {
@@ -92,13 +93,33 @@ export default function ScavengerHunt() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: async () => {
+            onPress: async () => {
             try {
               const db = getFirestore(app);
               const batch = writeBatch(db);
-              ids.forEach((id) => {
-                batch.delete(doc(db, "hunts", id));
-              });
+
+              for (const id of ids) {
+                // delete conditions -> locations -> hunt (cascade)
+                const locationsQ = query(collection(db, 'locations'), where('huntId', '==', id));
+                const locSnap = await getDocs(locationsQ);
+                locSnap.forEach((locDoc) => {
+                  const locId = locDoc.id;
+                  // delete all conditions for this location
+                  // gather condition docs
+                  // (we'll perform another getDocs per location)
+                });
+
+                // For safety and simplicity, fetch conditions per location and add to batch
+                for (const locDoc of locSnap.docs) {
+                  const condSnap = await getDocs(query(collection(db, 'conditions'), where('locationId', '==', locDoc.id)));
+                  condSnap.forEach((c) => batch.delete(doc(db, 'conditions', c.id)));
+                  batch.delete(doc(db, 'locations', locDoc.id));
+                }
+
+                // finally delete the hunt
+                batch.delete(doc(db, 'hunts', id));
+              }
+
               await batch.commit();
               // update redux
               ids.forEach((id) => dispatch(removeHunt(id)));
@@ -117,22 +138,14 @@ export default function ScavengerHunt() {
     <View style={{ flex: 1, padding: 16 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <Text style={{ fontSize: 20, fontWeight: "bold" }}>Your Hunts</Text>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          {multiMode ? (
-            <>
-              <Pressable onPress={handleBulkDelete} style={{ padding: 8, backgroundColor: '#dc2626', borderRadius: 6 }}>
-                <Text style={{ color: '#fff' }}>Delete ({Object.values(selected).filter(Boolean).length})</Text>
-              </Pressable>
-              <Pressable onPress={clearSelection} style={{ padding: 8, backgroundColor: '#6b7280', borderRadius: 6, marginLeft: 8 }}>
-                <Text style={{ color: '#fff' }}>Cancel</Text>
-              </Pressable>
-            </>
-          ) : (
-            <Pressable onPress={() => setMultiMode(true)} style={{ padding: 8, backgroundColor: '#2563eb', borderRadius: 6 }}>
-              <Text style={{ color: '#fff' }}>Select</Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Pressable onPress={handleBulkDelete} style={{ padding: 8, backgroundColor: Object.values(selected).filter(Boolean).length ? '#dc2626' : '#9ca3af', borderRadius: 6 }}>
+              <Text style={{ color: '#fff' }}>Delete Selected ({Object.values(selected).filter(Boolean).length})</Text>
             </Pressable>
-          )}
-        </View>
+            <Pressable onPress={clearSelection} style={{ padding: 8, backgroundColor: '#6b7280', borderRadius: 6, marginLeft: 8 }}>
+              <Text style={{ color: '#fff' }}>Clear</Text>
+            </Pressable>
+          </View>
       </View>
 
       <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
@@ -156,12 +169,24 @@ export default function ScavengerHunt() {
             onPress={() => (multiMode ? toggleSelect(item.id) : router.push(`/hunt/${item.id}` as any))}
             style={{ padding: 12, borderBottomWidth: 1, borderColor: "#eee", flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
           >
-            <Text style={{ fontSize: 16 }}>{item.name}</Text>
-            {multiMode ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <Pressable onPress={() => toggleSelect(item.id)} style={{ padding: 8 }}>
                 <Text>{selected[item.id] ? '☑️' : '⬜'}</Text>
               </Pressable>
-            ) : null}
+              <Text style={{ fontSize: 16 }}>{item.name}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Text style={{ marginRight: 8 }}>{(item as any).isVisible ? 'Public' : 'Private'}</Text>
+              <Switch value={!!(item as any).isVisible} onValueChange={async (val) => {
+                try {
+                  const db = getFirestore(app);
+                  await updateDoc(doc(db, 'hunts', item.id), { isVisible: val });
+                } catch (e) {
+                  console.error(e);
+                  Alert.alert('Update failed', 'Could not update visibility');
+                }
+              }} />
+            </View>
           </Pressable>
         )}
       />

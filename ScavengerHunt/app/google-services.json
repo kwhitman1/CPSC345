@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "785247232651",
+    "project_id": "testproject-59bac",
+    "storage_bucket": "testproject-59bac.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:785247232651:android:2e4861abd0cddae1b2ea8e",
+        "android_client_info": {
+          "package_name": "com.kadewhitman.scavengerhunt"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "785247232651-5orpvodtvddttnd4lvfli0tedo6f0iqk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAYNMYPwf2LaPo00YFwUkA3msod0FZQ118"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "785247232651-433c34ocl2e0mbht0q1i0evrsij4027t.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "785247232651-5fdirt59bdfcne1926kpnnm90fss3f6f.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.kadewhitman.firebase-exporouter-app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
