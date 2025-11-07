@@ -29,7 +29,16 @@ export default function ScavengerHunt() {
 
     const unsub = onSnapshot(q, (snapshot) => {
       const items: any[] = [];
-      snapshot.forEach((doc) => items.push({ id: doc.id, ...doc.data() }));
+      snapshot.forEach((d) => {
+        const raw = d.data() as any;
+        items.push({
+          id: d.id,
+          name: raw.name,
+          userId: raw.userId,
+          isVisible: raw.isVisible ?? false,
+          createdAt: raw.createdAt && raw.createdAt.toDate ? raw.createdAt.toDate().toISOString() : null,
+        });
+      });
       dispatch(setHunts(items));
     });
 
@@ -63,7 +72,7 @@ export default function ScavengerHunt() {
       });
 
   setName("");
-  dispatch(addHunt({ id: docRef.id, name: trimmed, userId: user.uid, createdAt: new Date() }));
+  dispatch(addHunt({ id: docRef.id, name: trimmed, userId: user.uid, createdAt: new Date().toISOString() }));
   router.push(`/hunt/${docRef.id}` as any);
     } catch (e) {
       console.error(e);
