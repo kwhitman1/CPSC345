@@ -54,7 +54,6 @@ export default function ScavengerHunt() {
     setCreating(true);
     try {
       const db = getFirestore(app);
-      // default visibility false for new hunts
       const existing = await getDocs(
         query(collection(db, "hunts"), where("userId", "==", user.uid), where("name", "==", trimmed))
       );
@@ -108,29 +107,23 @@ export default function ScavengerHunt() {
               const batch = writeBatch(db);
 
               for (const id of ids) {
-                // delete conditions -> locations -> hunt (cascade)
                 const locationsQ = query(collection(db, 'locations'), where('huntId', '==', id));
                 const locSnap = await getDocs(locationsQ);
                 locSnap.forEach((locDoc) => {
                   const locId = locDoc.id;
-                  // delete all conditions for this location
-                  // gather condition docs
-                  // (we'll perform another getDocs per location)
                 });
 
-                // For safety and simplicity, fetch conditions per location and add to batch
+
                 for (const locDoc of locSnap.docs) {
                   const condSnap = await getDocs(query(collection(db, 'conditions'), where('locationId', '==', locDoc.id)));
                   condSnap.forEach((c) => batch.delete(doc(db, 'conditions', c.id)));
                   batch.delete(doc(db, 'locations', locDoc.id));
                 }
 
-                // finally delete the hunt
                 batch.delete(doc(db, 'hunts', id));
               }
 
               await batch.commit();
-              // update redux
               ids.forEach((id) => dispatch(removeHunt(id)));
               clearSelection();
             } catch (e) {
