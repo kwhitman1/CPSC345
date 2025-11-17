@@ -1,7 +1,7 @@
 import { Tabs } from "expo-router";
 import React from "react";
 import { useNavigation } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 import { FontAwesome } from "@expo/vector-icons";
 import { Pressable } from "react-native";
 import { DrawerNavigationProp } from "@react-navigation/drawer";
@@ -80,7 +80,22 @@ export default function TabLayout() {
           ),
         }}
       />
+       <Tabs.Screen
+        name="HuntDiscovery"
+        options={{
+          title: "Hunt Discovery",
+          tabBarIcon: ({ color, focused }) => (
+            <FontAwesome6 
+            name="magnifying-glass-location" 
+            size={24} 
+            color={color} 
+            style={{ opacity: focused ? 1 : 0.85 }}
+            />
+          ),
+        }}
+      />
     </Tabs>
+    
     
   );
 }
