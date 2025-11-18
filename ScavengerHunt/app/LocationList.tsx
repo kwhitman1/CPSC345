@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Pressable, FlatList, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 import { getFirestore, collection, query, where, onSnapshot, addDoc, serverTimestamp, doc, setDoc, getDocs, QuerySnapshot, DocumentData } from 'firebase/firestore';
 import app, { getFirebaseAuth } from '@/lib/firebase-config';
+import * as Location from 'expo-location';
 
 export default function LocationList() {
   const params = useLocalSearchParams() as { huntId?: string };
@@ -18,6 +21,7 @@ export default function LocationList() {
   const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
   const [creating, setCreating] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     if (!huntId) return;
@@ -29,6 +33,22 @@ export default function LocationList() {
     });
     return () => unsub();
   }, [huntId]);
+
+  // check hunt owner so only owner can create locations
+  useEffect(() => {
+    if (!huntId) return;
+    const huntRef = doc(db, 'hunts', huntId);
+    const unsub = onSnapshot(huntRef, (snap) => {
+      const data: any = snap.exists() ? snap.data() : null;
+      const auth = getFirebaseAuth();
+      const uid = auth?.currentUser?.uid;
+      setIsOwner(Boolean(uid && data && data.userId === uid));
+    }, (err) => {
+      console.warn('hunt owner snapshot error', err);
+      setIsOwner(false);
+    });
+    return () => unsub();
+  }, [huntId, db]);
 
   // load user's found locations (per-user subcollection under users/{uid}/foundLocations)
   useEffect(() => {
@@ -124,6 +144,7 @@ export default function LocationList() {
 
   const handleCreate = async () => {
     if (!huntId) return Alert.alert('Missing hunt', 'No huntId provided');
+  if (!isOwner) return Alert.alert('Forbidden', 'Only the hunt owner can add locations');
     if (!name.trim()) return Alert.alert('Validation', 'Name is required');
     if (!validateCoords(latitude, longitude)) return Alert.alert('Validation', 'Invalid coordinates');
 
@@ -153,11 +174,11 @@ export default function LocationList() {
   const handleCreateSample = async () => {
     if (!huntId) return Alert.alert('Missing hunt', 'No huntId provided');
     if (locations.length > 0) return Alert.alert('Exists', 'This hunt already has locations.');
-
     // require signed-in user when creating resources
     try {
       const auth = getFirebaseAuth();
       if (!auth.currentUser) return Alert.alert('Sign in required', 'Please sign in to create sample location');
+      if (!isOwner) return Alert.alert('Forbidden', 'Only the hunt owner can create locations');
       const db = getFirestore(app);
       const docRef = await addDoc(collection(db, 'locations'), {
         huntId,
@@ -176,36 +197,70 @@ export default function LocationList() {
     }
   };
 
-  // helper to mark a location as found for the current user
-  const markFound = async (locationId: string) => {
+  // Real check-in: require user be near the location, then write to checkIns
+  const CHECKIN_RADIUS_METERS = 50; // adjust as needed
+  const toRad = (n: number) => (n * Math.PI) / 180;
+  const distanceMeters = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371000; // meters
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const handleCheckIn = async (loc: any) => {
     const auth = getFirebaseAuth();
-    if (!auth || !auth.currentUser) return Alert.alert('Sign in required', 'Please sign in to mark found');
+    if (!auth || !auth.currentUser) return Alert.alert('Sign in required', 'Please sign in to check in');
     const uid = auth.currentUser.uid;
+
     try {
-      await setDoc(doc(db, `users/${uid}/foundLocations`, locationId), {
-        locationId,
-        foundAt: serverTimestamp(),
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return Alert.alert('Permission required', 'Location permission is required to check in.');
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.LocationAccuracy.Highest });
+      const userLat = pos.coords.latitude;
+      const userLon = pos.coords.longitude;
+      const locLat = Number(loc.latitude);
+      const locLon = Number(loc.longitude);
+      if (Number.isNaN(locLat) || Number.isNaN(locLon)) return Alert.alert('Location error', 'This location is missing valid coordinates.');
+      const dist = distanceMeters(userLat, userLon, locLat, locLon);
+      if (dist > CHECKIN_RADIUS_METERS) {
+        return Alert.alert('Too far', `You are ${Math.round(dist)}m away. Move within ${CHECKIN_RADIUS_METERS}m to check in.`);
+      }
+
+      await addDoc(collection(db, 'checkIns'), {
+        userId: uid,
+        huntId,
+        locationId: loc.id,
+        timestamp: serverTimestamp(),
       });
-      Alert.alert('Marked found', 'Location marked as found for your account');
+      Alert.alert('Checked in', 'Successfully checked in!');
     } catch (e) {
-      console.error('markFound failed', e);
-      Alert.alert('Error', 'Could not mark found');
+      console.error('check-in failed', e);
+      Alert.alert('Error', 'Could not complete check-in');
     }
   };
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
+    <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, padding: 16 }}>
       <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>Locations</Text>
 
-      <View style={{ marginBottom: 12 }}>
-        <TextInput placeholder="Location name" value={name} onChangeText={setName} style={{ borderWidth: 1, padding: 8, marginBottom: 8 }} />
-        <TextInput placeholder="Explanation" value={explanation} onChangeText={setExplanation} style={{ borderWidth: 1, padding: 8, marginBottom: 8 }} />
-        <TextInput placeholder="Latitude (e.g. 47.6062)" value={latitude} onChangeText={setLatitude} style={{ borderWidth: 1, padding: 8, marginBottom: 8 }} keyboardType="numeric" />
-        <TextInput placeholder="Longitude (e.g. -122.3321)" value={longitude} onChangeText={setLongitude} style={{ borderWidth: 1, padding: 8, marginBottom: 8 }} keyboardType="numeric" />
-        <Pressable onPress={handleCreate} style={{ padding: 12, backgroundColor: '#1f6feb', borderRadius: 6 }}>
-          <Text style={{ color: '#fff' }}>{creating ? 'Creating...' : 'Add New Location'}</Text>
-        </Pressable>
-      </View>
+      {isOwner ? (
+        <View style={{ marginBottom: 12 }}>
+          <TextInput placeholder="Location name" value={name} onChangeText={setName} style={{ borderWidth: 1, padding: 8, marginBottom: 8 }} />
+          <TextInput placeholder="Explanation" value={explanation} onChangeText={setExplanation} style={{ borderWidth: 1, padding: 8, marginBottom: 8 }} />
+          <TextInput placeholder="Latitude (e.g. 47.6062)" value={latitude} onChangeText={setLatitude} style={{ borderWidth: 1, padding: 8, marginBottom: 8 }} keyboardType="numeric" />
+          <TextInput placeholder="Longitude (e.g. -122.3321)" value={longitude} onChangeText={setLongitude} style={{ borderWidth: 1, padding: 8, marginBottom: 8 }} keyboardType="numeric" />
+          <Pressable onPress={handleCreate} style={{ padding: 12, backgroundColor: '#1f6feb', borderRadius: 6 }}>
+            <Text style={{ color: '#fff' }}>{creating ? 'Creating...' : 'Add New Location'}</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={{ marginBottom: 12 }}>
+          <Text style={{ color: '#666' }}>Only the hunt owner can add new locations.</Text>
+        </View>
+      )}
 
       <FlatList
         data={visibleLocations}
@@ -214,12 +269,13 @@ export default function LocationList() {
           <Pressable onPress={() => router.push(`/LocationDetail?locationId=${item.id}` as any)} style={{ padding: 12, borderBottomWidth: 1, borderColor: '#eee' }}>
             <Text style={{ fontSize: 16, fontWeight: '600' }}>{item.locationName}</Text>
             <Text style={{ color: '#666' }}>{item.explanation}</Text>
-            <Pressable onPress={() => markFound(item.id)} style={{ marginTop: 6, padding: 8, backgroundColor: '#ddd', borderRadius: 6 }}>
-              <Text>Mark found (for testing)</Text>
+            <Pressable onPress={() => handleCheckIn(item)} style={{ marginTop: 6, padding: 8, backgroundColor: '#1f6feb', borderRadius: 6 }}>
+              <Text style={{ color: '#fff' }}>Check In</Text>
             </Pressable>
           </Pressable>
         )}
       />
+      </View>
     </View>
   );
 }

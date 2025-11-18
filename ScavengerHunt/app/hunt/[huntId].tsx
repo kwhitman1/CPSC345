@@ -8,8 +8,15 @@ import {
   onSnapshot,
   updateDoc,
   deleteDoc,
-} from "firebase/firestore";
-import { collection, query, where, QuerySnapshot, DocumentData } from "firebase/firestore";
+  addDoc,
+  collection,
+  serverTimestamp,
+  query,
+  where,
+  getDocs,
+  QuerySnapshot,
+  DocumentData,
+} from 'firebase/firestore';
 import app from "@/lib/firebase-config";
 import { useSession } from "@/context";
 
@@ -21,6 +28,7 @@ export default function HuntDetail() {
   const [saving, setSaving] = useState(false);
   const router = useRouter();
   const { user } = useSession();
+  const isOwner = !!(user && hunt && (hunt.userId === user.uid));
 
   useEffect(() => {
     if (!huntId) return;
@@ -99,6 +107,32 @@ export default function HuntDetail() {
     ]);
   };
 
+  // Start hunt for current user (creates playerHunt)
+  const handleStartHunt = async () => {
+    if (!user) return Alert.alert('Sign in required', 'Please sign in to start this hunt');
+    try {
+      const db = getFirestore(app);
+      // ensure we don't create duplicates
+      const q = query(collection(db, 'playerHunts'), where('userId', '==', user.uid), where('huntId', '==', huntId));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        Alert.alert('Already started', 'You have already started this hunt');
+        return;
+      }
+      await addDoc(collection(db, 'playerHunts'), {
+        userId: user.uid,
+        huntId,
+        status: 'STARTED',
+        startTime: serverTimestamp(),
+        completionTime: null,
+      });
+      Alert.alert('Hunt started', 'Good luck!');
+    } catch (e) {
+      console.error('startHunt failed', e);
+      Alert.alert('Error', 'Could not start hunt');
+    }
+  };
+
   if (!hunt) return (
     <View style={{flex:1,justifyContent:'center',alignItems:'center'}}><Text>Loading...</Text></View>
   )
@@ -108,7 +142,10 @@ export default function HuntDetail() {
       <Text style={{ marginBottom: 8, color: '#444' }}>Locations in this hunt: {locationCount}</Text>
 
       <Pressable onPress={() => router.push(`/LocationList?huntId=${huntId}` as any)} style={{ padding: 10, backgroundColor: '#eee', borderRadius: 6, marginBottom: 12 }}>
-        <Text>Manage Locations</Text>
+        <Text>{isOwner ? 'Manage Locations' : 'View Locations'}</Text>
+      </Pressable>
+      <Pressable onPress={handleStartHunt} style={{ padding: 10, backgroundColor: '#16a34a', borderRadius: 6, marginBottom: 12 }}>
+        <Text style={{ color: '#fff' }}>Start Hunt</Text>
       </Pressable>
       <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>Edit Hunt</Text>
 

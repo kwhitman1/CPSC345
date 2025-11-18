@@ -73,7 +73,9 @@ export default function HuntDiscovery() {
         const startedChunks: string[][] = [];
         for (let i = 0; i < startedIds.length; i += 10) startedChunks.push(startedIds.slice(i, i + 10));
 
-        const ciCounts: Record<string, number> = {};
+  const ciCounts: Record<string, number> = {};
+  // track unique locationIds per hunt to avoid double-counting multiple check-ins
+  const ciLocationSets: Record<string, Set<string>> = {};
         const locCounts: Record<string, number> = {};
 
         // load checkIns counts
@@ -82,8 +84,9 @@ export default function HuntDiscovery() {
           const ciSnap = await getDocs(ciQ);
           ciSnap.forEach(d => {
             const data = d.data() as any;
-            if (!data?.huntId) return;
-            ciCounts[data.huntId] = (ciCounts[data.huntId] || 0) + 1;
+            if (!data?.huntId || !data?.locationId) return;
+            ciLocationSets[data.huntId] = ciLocationSets[data.huntId] || new Set<string>();
+            ciLocationSets[data.huntId].add(data.locationId);
           });
         }
 
@@ -100,7 +103,7 @@ export default function HuntDiscovery() {
 
         for (const hid of startedIds) {
           const total = locCounts[hid] || 0;
-          const found = ciCounts[hid] || 0;
+          const found = ciLocationSets[hid] ? ciLocationSets[hid].size : 0;
           entries[hid] = total > 0 ? Math.round((found / total) * 100) : null;
         }
 
