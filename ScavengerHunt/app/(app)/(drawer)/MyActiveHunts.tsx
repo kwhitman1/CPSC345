@@ -24,11 +24,9 @@ export default function MyActiveHunts() {
     const unsub = onSnapshot(q, async (snap) => {
       const entries: any[] = [];
       snap.forEach(d => entries.push({ id: d.id, ...(d.data() as any) }));
-      // fetch hunt docs for names
       const huntIds = Array.from(new Set(entries.map(e => e.huntId).filter(Boolean)));
       const huntMap: Record<string, any> = {};
       if (huntIds.length > 0) {
-        // chunk in case of >10
         for (let i = 0; i < huntIds.length; i += 10) {
           const chunk = huntIds.slice(i, i + 10);
           const hQ = query(collection(db, 'hunts'), where('__name__', 'in', chunk));
@@ -58,7 +56,6 @@ export default function MyActiveHunts() {
           return;
         }
 
-        // dedupe and chunk
         const uniqueIds = Array.from(new Set(huntIds));
         const chunks: string[][] = [];
         for (let i = 0; i < uniqueIds.length; i += 10) chunks.push(uniqueIds.slice(i, i + 10));
@@ -66,7 +63,6 @@ export default function MyActiveHunts() {
         const locCounts: Record<string, number> = {};
         const ciLocationSets: Record<string, Set<string>> = {};
 
-        // load locations per hunt
         for (const chunk of chunks) {
           const locQ = query(collection(db, 'locations'), where('huntId', 'in', chunk));
           const locSnap = await getDocs(locQ);
@@ -77,7 +73,6 @@ export default function MyActiveHunts() {
           });
         }
 
-        // load checkIns per hunt for this user (distinct locationIds)
         for (const chunk of chunks) {
           const ciQ = query(collection(db, 'checkIns'), where('userId', '==', user.uid), where('huntId', 'in', chunk));
           const ciSnap = await getDocs(ciQ);
@@ -89,7 +84,6 @@ export default function MyActiveHunts() {
           });
         }
 
-        // build a mapping from huntId -> playerHunt doc id (should be one per user/hunt)
         const huntToPlayerDoc: Record<string, string> = {};
         activeHunts.forEach(ph => { if (ph.huntId) huntToPlayerDoc[ph.huntId] = ph.id; });
 
@@ -99,12 +93,10 @@ export default function MyActiveHunts() {
           const percent = total > 0 ? Math.round((found / total) * 100) : null;
           map[hid] = percent;
 
-          // if user has found all distinct locations, mark the playerHunt as COMPLETED
           try {
             if (percent === 100 && huntToPlayerDoc[hid]) {
               const playerDocId = huntToPlayerDoc[hid];
               const playerRef = doc(db, 'playerHunts', playerDocId);
-              // update status to COMPLETED and set completedAt
               await updateDoc(playerRef, { status: 'COMPLETED', completedAt: serverTimestamp() });
             }
           } catch (e) {

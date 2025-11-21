@@ -49,11 +49,9 @@ export default function HuntDiscovery() {
           return;
         }
 
-        // Firestore "in" supports up to 10 items; chunk if necessary
         const chunks: string[][] = [];
         for (let i = 0; i < huntIds.length; i += 10) chunks.push(huntIds.slice(i, i + 10));
 
-        // 1) find started hunts for this user
         const started = new Set<string>();
         for (const chunk of chunks) {
           const phQ = query(collection(db, 'playerHunts'), where('userId', '==', user.uid), where('huntId', 'in', chunk));
@@ -74,11 +72,9 @@ export default function HuntDiscovery() {
         for (let i = 0; i < startedIds.length; i += 10) startedChunks.push(startedIds.slice(i, i + 10));
 
   const ciCounts: Record<string, number> = {};
-  // track unique locationIds per hunt to avoid double-counting multiple check-ins
   const ciLocationSets: Record<string, Set<string>> = {};
         const locCounts: Record<string, number> = {};
 
-        // load checkIns counts
         for (const chunk of startedChunks) {
           const ciQ = query(collection(db, 'checkIns'), where('userId', '==', user.uid), where('huntId', 'in', chunk));
           const ciSnap = await getDocs(ciQ);
@@ -90,7 +86,6 @@ export default function HuntDiscovery() {
           });
         }
 
-        // load location totals
         for (const chunk of startedChunks) {
           const locQ = query(collection(db, 'locations'), where('huntId', 'in', chunk));
           const locSnap = await getDocs(locQ);

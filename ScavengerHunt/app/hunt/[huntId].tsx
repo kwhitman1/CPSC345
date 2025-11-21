@@ -23,8 +23,6 @@ import { Linking, Platform } from 'react-native';
 import app from "@/lib/firebase-config";
 import { useSession } from "@/context";
 
-// react-native-maps can crash the bundle at import time when native module is missing.
-// We'll require it at runtime inside RuntimeMap to avoid that.
 
 const MapPlaceholder = ({ width, height }: { width: number; height: number }) => (
   <View style={{ width, height, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f3f4f6', borderRadius: 8 }}>
@@ -32,17 +30,12 @@ const MapPlaceholder = ({ width, height }: { width: number; height: number }) =>
   </View>
 );
 
-// RuntimeMap: requires react-native-maps at runtime to avoid bundling/native crashes
 function RuntimeMap({ latitude, longitude, devicePos, width, height }: { latitude: number | null | undefined; longitude: number | null | undefined; devicePos?: { latitude: number; longitude: number } | null; width: number; height: number }) {
-  // If coords missing, show placeholder
   if (latitude == null || longitude == null) return <MapPlaceholder width={width} height={height} />;
 
-  // On web we must never import native-only modules. Guard with Platform.
   if (Platform.OS === 'web') return <MapPlaceholder width={width} height={height} />;
 
   try {
-    // require at runtime so the app won't crash when native module is absent
-    // eslint-disable-next-line @typescript-eslint/no-var-requires,global-require
     const MapView = require('react-native-maps').default;
     const Marker = require('react-native-maps').Marker;
 
@@ -58,7 +51,6 @@ function RuntimeMap({ latitude, longitude, devicePos, width, height }: { latitud
       </MapView>
     );
   } catch (e) {
-    // module not available or failed to load
     return <MapPlaceholder width={width} height={height} />;
   }
 }
@@ -74,13 +66,11 @@ export default function HuntDetail() {
   const { user } = useSession();
   const isOwner = !!(user && hunt && (hunt.userId === user.uid));
 
-  // player state
   const [playerHunt, setPlayerHunt] = useState<any | null>(null);
   const [locations, setLocations] = useState<any[]>([]);
   const [userFoundIds, setUserFoundIds] = useState<Set<string>>(new Set());
   const [checkInCounts, setCheckInCounts] = useState<Record<string, number>>({});
   const [conditionsList, setConditionsList] = useState<any[]>([]);
-  // proximity guidance state
   const [devicePos, setDevicePos] = useState<{ latitude: number; longitude: number } | null>(null);
   const [guidedLocationId, setGuidedLocationId] = useState<string | null>(null);
 
@@ -91,7 +81,6 @@ export default function HuntDetail() {
 
     const unsub = onSnapshot(docRef, (snap) => {
       if (!snap.exists()) {
-        // Deleted remotely
         router.replace("/(app)/(drawer)/(tabs)" as any);
         return;
       }
@@ -103,7 +92,6 @@ export default function HuntDetail() {
     return () => unsub();
   }, [huntId, router]);
 
-  // listen for locations count for this hunt
   const [locationCount, setLocationCount] = useState<number>(0);
   useEffect(() => {
     if (!huntId) return;
@@ -118,7 +106,6 @@ export default function HuntDetail() {
     return () => unsub();
   }, [huntId]);
 
-  // watch device position when the user starts guiding
   useEffect(() => {
     let sub: Location.LocationSubscription | null = null;
     let mounted = true;
@@ -143,7 +130,7 @@ export default function HuntDetail() {
 
   function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
     const toRad = (v: number) => (v * Math.PI) / 180;
-    const R = 6371000; // meters
+    const R = 6371000;
     const dLat = toRad(lat2 - lat1);
     const dLon = toRad(lon2 - lon1);
     const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2);
@@ -157,10 +144,9 @@ export default function HuntDetail() {
     const y = Math.sin(toRad(lon2-lon1)) * Math.cos(toRad(lat2));
     const x = Math.cos(toRad(lat1))*Math.sin(toRad(lat2)) - Math.sin(toRad(lat1))*Math.cos(toRad(lat2))*Math.cos(toRad(lon2-lon1));
     const brng = Math.atan2(y, x);
-    return (toDeg(brng) + 360) % 360; // degrees
+    return (toDeg(brng) + 360) % 360;
   }
 
-  // subscribe to playerHunt for current user
   useEffect(() => {
     if (!huntId || !user) return;
     const db = getFirestore(app);
@@ -176,7 +162,6 @@ export default function HuntDetail() {
     return () => unsub();
   }, [huntId, user]);
 
-  // subscribe to checkIns for this hunt to build counts and user's found set
   useEffect(() => {
     if (!huntId) return;
     const db = getFirestore(app);
@@ -197,7 +182,6 @@ export default function HuntDetail() {
     return () => unsub();
   }, [huntId, user]);
 
-  // subscribe to conditions for this hunt
   useEffect(() => {
     if (!huntId) return;
     const db = getFirestore(app);
@@ -219,7 +203,6 @@ export default function HuntDetail() {
   const round4 = (n: number) => Math.round(n * 10000) / 10000;
 
   function isLocationAvailable(loc: any) {
-    // requiredByLocation and time windows
     const requiredByLocation: Record<string, string[]> = {};
     const timeWindowsByLocation: Record<string, { start: string; end: string }[]> = {};
     conditionsList.forEach((c: any) => {
@@ -282,14 +265,10 @@ export default function HuntDetail() {
       if (Number.isNaN(locLat) || Number.isNaN(locLon)) return Alert.alert('Location error', 'This location is missing valid coordinates.');
       if (userLat !== locLat || userLon !== locLon) return Alert.alert('Too far', 'You are not close enough to the location.');
 
-      // ensure playerHunt exists
       const ph = await ensurePlayerHunt();
-      // write checkIn
       const db = getFirestore(app);
       await addDoc(collection(db, 'checkIns'), { userId: user.uid, huntId, locationId: loc.id, timestamp: serverTimestamp() });
 
-      // after checkin, if all locations done, mark completed
-      // compute user's found count
       const userFound = new Set(userFoundIds);
       userFound.add(loc.id);
       const total = locations.length;
@@ -312,12 +291,10 @@ export default function HuntDetail() {
         try {
           const db = getFirestore(app);
           if (!user) throw new Error('Not signed in');
-          // delete player's checkIns for this hunt
           const ciQ = query(collection(db, 'checkIns'), where('userId', '==', user.uid), where('huntId', '==', huntId));
           const ciSnap = await getDocs(ciQ);
           const batch = writeBatch(db);
           ciSnap.forEach(d => batch.delete(d.ref));
-          // delete playerHunt doc
           const phRef = doc(db, 'playerHunts', playerHunt.id);
           batch.delete(phRef);
           await batch.commit();
@@ -377,12 +354,10 @@ export default function HuntDetail() {
     ]);
   };
 
-  // Start hunt for current user (creates playerHunt)
   const handleStartHunt = async () => {
     if (!user) return Alert.alert('Sign in required', 'Please sign in to start this hunt');
     try {
       const db = getFirestore(app);
-      // ensure we don't create duplicates
       const q = query(collection(db, 'playerHunts'), where('userId', '==', user.uid), where('huntId', '==', huntId));
       const snap = await getDocs(q);
       if (!snap.empty) {
@@ -415,7 +390,6 @@ export default function HuntDetail() {
         <Text>{isOwner ? 'Manage Locations' : 'View Locations'}</Text>
       </Pressable>
 
-      {/* Preview list for hunts not yet started by this user */}
       { !playerHunt && locations && locations.length > 0 ? (
         <View style={{ marginBottom: 12 }}>
           <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>Locations (preview)</Text>
@@ -434,14 +408,12 @@ export default function HuntDetail() {
         </Pressable>
       ) : null}
 
-      {/* Abandon button for users who have started this hunt (only when STARTED) */}
       { playerHunt && playerHunt.status === 'STARTED' ? (
         <Pressable onPress={handleAbandon} style={{ padding: 10, backgroundColor: '#ff4d4f', borderRadius: 6, marginBottom: 12 }}>
           <Text style={{ color: '#fff' }}>Abandon Hunt</Text>
         </Pressable>
       ) : null }
       
-      {/* Location progress: name/clue, completion flag for current user, and total check-ins */}
       <View style={{ marginTop: 8, marginBottom: 16 }}>
         <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>Location Progress</Text>
         {locations.length === 0 ? (
@@ -450,7 +422,6 @@ export default function HuntDetail() {
           locations.map((loc) => {
             const completed = userFoundIds ? userFoundIds.has(loc.id) : false;
             const total = checkInCounts[loc.id] || 0;
-            // compute availability for guidance
             const available = isLocationAvailable(loc);
             return (
               <View key={loc.id} style={{ padding: 10, borderWidth: 1, borderColor: '#eee', borderRadius: 6, marginBottom: 8 }}>
@@ -460,7 +431,6 @@ export default function HuntDetail() {
                   <Text style={{ color: completed ? '#059669' : '#9ca3af' }}>{completed ? '✅ Completed' : '⭕ Not completed'}</Text>
                   <Text style={{ color: '#333' }}>Check-ins: {total}</Text>
                 </View>
-                {/* Guidance controls: show Guide button when available */}
                 {available && !completed ? (
                   <View style={{ marginTop: 8 }}>
                     <View style={{ flexDirection: 'row' }}>
@@ -478,7 +448,6 @@ export default function HuntDetail() {
                     </View>
                   </View>
                 ) : null}
-                {/* If this loc is currently guided show distance/bearing */}
                 { guidedLocationId === loc.id && devicePos ? (
                   (() => {
                     const d = haversineDistance(devicePos.latitude, devicePos.longitude, Number(loc.latitude), Number(loc.longitude));

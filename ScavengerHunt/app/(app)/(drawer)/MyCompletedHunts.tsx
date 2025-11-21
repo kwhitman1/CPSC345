@@ -25,7 +25,6 @@ export default function MyCompletedHunts() {
       const entries: any[] = [];
       snap.forEach(d => entries.push({ id: d.id, ...(d.data() as any) }));
 
-      // fetch hunt names
       const huntIds = Array.from(new Set(entries.map(e => e.huntId).filter(Boolean)));
       const huntMap: Record<string, any> = {};
       if (huntIds.length > 0) {
