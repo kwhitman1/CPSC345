@@ -25,11 +25,6 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
         headerShown: true,
-        /**
-         * Add hamburger menu button to all tab headers by default
-         * This is placed in screenOptions to avoid repetition across screens
-         * Each screen can override this by setting headerLeft: () => null
-         */
         headerLeft: () => (
           <Pressable
             onPress={() => navigation.openDrawer()}

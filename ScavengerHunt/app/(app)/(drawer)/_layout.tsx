@@ -34,6 +34,22 @@ const DrawerLayout = () => {
             title: "Profile", // Header title when screen is open
           }}
         />
+        <Drawer.Screen
+          name="MyActiveHunts"
+          options={{
+            drawerLabel: "My Active Hunts",
+            title: "My Active Hunts",
+            headerShown: true,
+          }}
+        />
+        <Drawer.Screen
+          name="MyCompletedHunts"
+          options={{
+            drawerLabel: "My Completed Hunts",
+            title: "My Completed Hunts",
+            headerShown: true,
+          }}
+        />
       </Drawer>
     </GestureHandlerRootView>
   );
