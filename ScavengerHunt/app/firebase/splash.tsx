@@ -9,7 +9,7 @@ export default function Splash() {
   useEffect(() => {
     if (!isLoading) {
       if (user) router.replace("/(app)/(drawer)/(tabs)");
-      else router.replace("/sign-in");
+      else router.replace("./SignIn");
     }
   }, [user, isLoading]);
 

@@ -127,7 +127,7 @@ export default function SignIn() {
       {/* Sign Up Link */}
       <View className="flex-row items-center mt-6">
         <Text className="text-gray-600">Don't have an account?</Text>
-        <Link href="/sign-up" asChild>
+        <Link href="./SignUp" asChild>
           <Pressable className="ml-2">
             <Text className="text-blue-600 font-semibold">Sign Up</Text>
           </Pressable>
