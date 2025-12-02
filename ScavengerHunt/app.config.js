@@ -1,5 +1,11 @@
 module.exports = {
+  
   expo: {
+    extra: {
+      eas: {
+        projectId: '57066c42-6a81-40f8-8e5a-a44fde655b91',
+      }
+    },
     name: 'firebase-rn-lib-app',
     slug: 'firebase-rn-lib-app',
     version: '1.0.0',
