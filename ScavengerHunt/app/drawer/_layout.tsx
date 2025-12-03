@@ -16,7 +16,7 @@ const DrawerLayout = () => {
           - headerShown: false removes double headers (drawer + tabs)
         */}
         <Drawer.Screen
-          name="(tabs)"
+          name="tabs"
           options={{
             drawerLabel: "Home",
             headerShown: false,

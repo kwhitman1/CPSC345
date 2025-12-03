@@ -10,7 +10,8 @@ export default function AppLayout() {
   }
 
   if (!user) {
-    return <Redirect href="/sign-in" />;
+    // Cast href to any to satisfy expo-router generated route union types
+    return <Redirect href={"/SignIn" as any} />;
   }
 
   return <Slot />;

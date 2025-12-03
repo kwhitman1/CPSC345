@@ -24,7 +24,7 @@ export default function Root() {
   const canGoBack = segments.length > 1;
   // hide header area when nested inside the tabs/drawer navigator
   const segs: any[] = segments as any[];
-  const isInTabs = segs.includes('(tabs)') || segs.includes('(app)');
+  const isInTabs = segs.includes('tabs') || segs.includes('app');
   // Set up the auth context and render our layout inside of it.
   return (
     <Provider store={store}>

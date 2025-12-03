@@ -1,8 +1,9 @@
 import { useSession } from "@/context";
 import React, { useEffect, useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text, Image, Button, Alert, ActivityIndicator } from "react-native";
 import app from '@/lib/firebase-config';
-import { getFirestore, collection, query, where, onSnapshot, orderBy, limit } from 'firebase/firestore';
+import { getFirestore, collection, query, where, onSnapshot, orderBy, limit, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 const ProfileScreen = () => {
   // ============================================================================
@@ -24,6 +25,8 @@ const ProfileScreen = () => {
   // Firestore: playerHunts and recent checkIns
   const [playerHunts, setPlayerHunts] = useState<any[]>([]);
   const [recentCheckIns, setRecentCheckIns] = useState<any[]>([]);
+  const [profile, setProfile] = useState<any>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!user?.uid) {
@@ -32,6 +35,12 @@ const ProfileScreen = () => {
       return;
     }
     const db = getFirestore(app);
+
+    // load user doc for name/profileImageUrl
+    const userDocRef = doc(db, 'users', user.uid);
+    getDoc(userDocRef).then((d) => {
+      if (d.exists()) setProfile({ id: d.id, ...(d.data() as any) });
+    }).catch(() => {});
 
     const phQ = query(collection(db, 'playerHunts'), where('userId', '==', user.uid));
     const phUnsub = onSnapshot(phQ, (snap) => {
@@ -58,6 +67,51 @@ const ProfileScreen = () => {
     };
   }, [user?.uid]);
 
+  const pickAndUploadImage = async () => {
+    if (!user?.uid) return Alert.alert('Not signed in', 'Sign in to update your profile');
+
+    // Try to dynamically import expo-image-picker. If not available, fallback to prompting for a URL.
+    let ImagePicker: any = null;
+    try {
+      ImagePicker = await import('expo-image-picker');
+    } catch (err) {
+      // fallback
+    }
+
+    if (!ImagePicker) {
+      // Fallback: simple prompt to enter an image URL (not implemented UI-wise here)
+      return Alert.alert('Image picker unavailable', 'Image picker is not installed in this environment. Use a URL in the users collection to set profileImageUrl.');
+    }
+
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) return Alert.alert('Permission required', 'Camera roll permission is required to choose a photo');
+
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8, allowsEditing: true });
+    if (res.cancelled) return;
+
+    try {
+      setUploading(true);
+      const storage = getStorage(app);
+      const resp = await fetch(res.uri);
+      const blob = await resp.blob();
+      const ref = storageRef(storage, `profileImages/${user.uid}_${Date.now()}`);
+      await uploadBytes(ref, blob);
+      const url = await getDownloadURL(ref);
+
+      // update user doc
+      const db = getFirestore(app);
+      const userDocRef = doc(db, 'users', user.uid);
+      await updateDoc(userDocRef, { profileImageUrl: url });
+      setProfile((p:any) => ({ ...(p || {}), profileImageUrl: url }));
+      Alert.alert('Uploaded', 'Profile picture updated');
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Upload failed', 'Could not upload image');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   // ============================================================================
   // Render
   // ============================================================================
@@ -66,8 +120,17 @@ const ProfileScreen = () => {
     <View className="flex-1 mt-4 p-4">
       {/* Welcome Section */}
       <View className="mb-8">
+        {/* Profile image + name */}
+        {profile?.profileImageUrl ? (
+          <Image source={{ uri: profile.profileImageUrl }} style={{ width: 96, height: 96, borderRadius: 48, marginBottom: 8 }} />
+        ) : (
+          <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#eee', marginBottom: 8, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#888' }}>No Photo</Text>
+          </View>
+        )}
+
         <Text className="text-xl font-bold text-blue-900">
-          Name: {displayName}
+          Name: {profile?.name || displayName}
         </Text>
         <Text className="text-xl font-semibold  text-blue-900 mt-2">
           Email: {user?.email}
@@ -78,6 +141,14 @@ const ProfileScreen = () => {
         <Text className="text-normal font-semibold  text-blue-900 mt-2">
           Created: {user?.metadata?.creationTime}
         </Text>
+
+        <View style={{ marginTop: 12 }}>
+          {uploading ? (
+            <ActivityIndicator />
+          ) : (
+            <Button title="Upload Photo" onPress={pickAndUploadImage} />
+          )}
+        </View>
       </View>
       {/* Player hunts summary */}
       <View className="mb-6">

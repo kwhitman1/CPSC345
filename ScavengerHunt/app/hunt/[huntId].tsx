@@ -81,7 +81,7 @@ export default function HuntDetail() {
 
     const unsub = onSnapshot(docRef, (snap) => {
       if (!snap.exists()) {
-        router.replace("/(app)/(drawer)/(tabs)" as any);
+        router.replace("/drawer/tabs" as any);
         return;
       }
   const data = { id: snap.id, ...(snap.data() as any) };
@@ -340,11 +340,11 @@ export default function HuntDetail() {
       {
         text: "Delete",
         style: "destructive",
-        onPress: async () => {
+            onPress: async () => {
           try {
             const db = getFirestore(app);
             await deleteDoc(doc(db, "hunts", huntId));
-            router.replace("/(app)" as any);
+            router.replace("/drawer/tabs" as any);
           } catch (e) {
             console.error(e);
             Alert.alert("Delete failed", "Could not delete hunt.");

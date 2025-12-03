@@ -58,7 +58,7 @@ export default function SignUp() {
     try {
       const resp = await handleRegister();
       if (resp) {
-        router.replace("/(app)/(drawer)/(tabs)" as any);
+        router.replace("/drawer/tabs" as any);
       } else {
         setError("Registration failed. Please try again.");
       }

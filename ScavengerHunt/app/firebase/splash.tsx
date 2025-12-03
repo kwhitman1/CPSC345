@@ -8,8 +8,8 @@ export default function Splash() {
 
   useEffect(() => {
     if (!isLoading) {
-      if (user) router.replace("/(app)/(drawer)/(tabs)");
-      else router.replace("./SignIn");
+      if (user) router.replace("/drawer/tabs");
+      else router.replace("/firebase/SignIn");
     }
   }, [user, isLoading]);
 

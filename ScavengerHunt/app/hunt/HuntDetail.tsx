@@ -30,7 +30,7 @@ export default function HuntDetail() {
     const unsub = onSnapshot(docRef, (snap) => {
       if (!snap.exists()) {
         // Deleted remotely
-        router.replace("/(app)/(drawer)/(tabs)" as any);
+        router.replace("/drawer/tabs" as any);
         return;
       }
   const data = { id: snap.id, ...(snap.data() as any) };
@@ -89,7 +89,7 @@ export default function HuntDetail() {
           try {
             const db = getFirestore(app);
             await deleteDoc(doc(db, "hunts", huntId));
-            router.replace("/(app)" as any);
+            router.replace("/drawer/tabs" as any);
           } catch (e) {
             console.error(e);
             Alert.alert("Delete failed", "Could not delete hunt.");
@@ -105,7 +105,6 @@ export default function HuntDetail() {
 
   return (
     <View style={{ padding: 16 }}>
-      <Text style={{ marginBottom: 8, color: '#444' }}>Locations in this hunt: {locationCount}</Text>
 
       <Pressable onPress={() => router.push(`/LocationList?huntId=${huntId}` as any)} style={{ padding: 10, backgroundColor: '#eee', borderRadius: 6, marginBottom: 12 }}>
         <Text>Manage Locations</Text>

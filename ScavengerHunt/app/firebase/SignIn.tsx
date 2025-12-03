@@ -44,7 +44,7 @@ export default function SignIn() {
     try {
       const resp = await handleLogin();
       if (resp) {
-        router.replace("/(app)/(drawer)/(tabs)/" as any);
+        router.replace("/drawer/tabs" as any);
       } else {
         setError("Invalid credentials — please check your email and password.");
       }
