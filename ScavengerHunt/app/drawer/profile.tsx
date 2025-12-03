@@ -70,12 +70,10 @@ const ProfileScreen = () => {
   const pickAndUploadImage = async () => {
     if (!user?.uid) return Alert.alert('Not signed in', 'Sign in to update your profile');
 
-    // Try to dynamically import expo-image-picker. If not available, fallback to prompting for a URL.
     let ImagePicker: any = null;
     try {
-      ImagePicker = await import('expo-image-picker');
+      ImagePicker = require('expo-image-picker');
     } catch (err) {
-      // fallback
     }
 
     if (!ImagePicker) {
