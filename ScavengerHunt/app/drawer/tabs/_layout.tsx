@@ -9,6 +9,8 @@ import { DrawerNavigationProp } from "@react-navigation/drawer";
 import { TabBarIcon } from "@/components/navigation/TabBarIcon";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTheme } from '@/context/theme';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 /**
  * TabLayout manages the bottom tab navigation while integrating with a drawer menu.
@@ -18,19 +20,27 @@ import { useColorScheme } from "@/hooks/useColorScheme";
  */
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { theme } = useTheme();
+  const iconColor = useThemeColor({}, 'icon');
+  const tint = useThemeColor({}, 'tint');
+  const background = useThemeColor({}, 'background');
+  const tabIconDefault = useThemeColor({}, 'tabIconDefault');
+  const tabIconSelected = useThemeColor({}, 'tabIconSelected');
   const navigation = useNavigation<DrawerNavigationProp<any>>();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+        tabBarActiveTintColor: tabIconSelected as string,
+        tabBarInactiveTintColor: tabIconDefault as string,
+        tabBarStyle: { backgroundColor: background as string },
         headerShown: true,
         headerLeft: () => (
           <Pressable
             onPress={() => navigation.openDrawer()}
             style={{ marginLeft: 16 }}
           >
-            <Ionicons name="menu" size={24} color="black" />
+            <Ionicons name="menu" size={24} color={iconColor} />
           </Pressable>
         ),
       }}

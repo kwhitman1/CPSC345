@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { FlatList, ActivityIndicator, Pressable } from 'react-native';
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { useRouter } from 'expo-router';
 import { getFirestore, collection, query, where, onSnapshot, getDocs, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import app from '@/lib/firebase-config';
@@ -13,6 +16,8 @@ export default function MyActiveHunts() {
   const [loading, setLoading] = useState(true);
   const [activeHunts, setActiveHunts] = useState<any[]>([]);
   const [progressMap, setProgressMap] = useState<Record<string, number | null>>({});
+  const tint = useThemeColor({}, 'tint');
+  const border = useThemeColor({}, 'icon');
 
   useEffect(() => {
     if (!user) {
@@ -45,8 +50,8 @@ export default function MyActiveHunts() {
   }, [db, user]);
 
   useEffect(() => {
-    let mounted = true;
-    async function loadProgress() {
+  let mounted = true;
+  async function loadProgress() {
       try {
         const map: Record<string, number | null> = {};
         const huntIds = activeHunts.map(h => h.huntId).filter(Boolean);
@@ -111,25 +116,41 @@ export default function MyActiveHunts() {
       }
     }
     loadProgress();
+    // lazily schedule local notifications for STARTED hunts if available
+    (async () => {
+      try {
+        // lazy-require scheduler so app doesn't break if notifications package isn't installed
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const scheduler = require('@/lib/notification-scheduler');
+        if (scheduler && typeof scheduler.requestAndSetNotificationHandler === 'function') {
+          const ok = await scheduler.requestAndSetNotificationHandler();
+          if (ok && user) {
+            await scheduler.scheduleNotificationsForUser(user.uid);
+          }
+        }
+      } catch (e) {
+        // scheduler or expo-notifications not present — ignore
+      }
+    })();
     return () => { mounted = false; };
   }, [activeHunts, user, db]);
 
-  if (loading) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator/></View>;
+  if (loading) return <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator/></ThemedView>;
 
   return (
-    <View style={{ flex: 1, padding: 12 }}>
-      <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>My Active Hunts</Text>
+    <ThemedView style={{ flex: 1, padding: 12 }}>
+      <ThemedText style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>My Active Hunts</ThemedText>
       <FlatList
         data={activeHunts}
         keyExtractor={i => i.id}
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => router.push(`/hunt/${item.huntId}`)} style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' }}>
-            <Text style={{ fontSize: 16, fontWeight: '600' }}>{item.huntName}</Text>
-            {progressMap[item.huntId] != null && <Text style={{ marginTop: 6, color: '#333' }}>Progress: {progressMap[item.huntId]}%</Text>}
-          </TouchableOpacity>
+          <Pressable onPress={() => router.push(`/hunt/${item.huntId}`)} style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: border as string }}>
+            <ThemedText style={{ fontSize: 16, fontWeight: '600' }}>{item.huntName}</ThemedText>
+            {progressMap[item.huntId] != null && <ThemedText style={{ marginTop: 6, color: '#333' }}>Progress: {progressMap[item.huntId]}%</ThemedText>}
+          </Pressable>
         )}
-        ListEmptyComponent={() => <Text>No active hunts</Text>}
+        ListEmptyComponent={() => <ThemedText>No active hunts</ThemedText>}
       />
-    </View>
+    </ThemedView>
   );
 }

@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, Alert } from "react-native";
+import { TextInput, Pressable, Alert } from "react-native";
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   getFirestore,
@@ -99,17 +102,20 @@ export default function HuntDetail() {
     ]);
   };
 
+  const background = useThemeColor({}, 'background');
+  const tint = useThemeColor({}, 'tint');
+
   if (!hunt) return (
-    <View style={{flex:1,justifyContent:'center',alignItems:'center'}}><Text>Loading...</Text></View>
+    <ThemedView style={{flex:1,justifyContent:'center',alignItems:'center'}}><ThemedText>Loading...</ThemedText></ThemedView>
   )
 
   return (
-    <View style={{ padding: 16 }}>
+    <ThemedView style={{ padding: 16, backgroundColor: background }}>
 
-      <Pressable onPress={() => router.push(`/LocationList?huntId=${huntId}` as any)} style={{ padding: 10, backgroundColor: '#eee', borderRadius: 6, marginBottom: 12 }}>
-        <Text>Manage Locations</Text>
+      <Pressable onPress={() => router.push(`/hunt/LocationList?huntId=${huntId}` as any)} style={{ padding: 10, backgroundColor: background, borderRadius: 6, marginBottom: 12 }}>
+        <ThemedText>Manage Locations</ThemedText>
       </Pressable>
-      <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>Edit Hunt</Text>
+      <ThemedText style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>Edit Hunt</ThemedText>
 
       <TextInput
         value={name}
@@ -118,13 +124,13 @@ export default function HuntDetail() {
         maxLength={255}
       />
 
-      <Pressable onPress={handleSave} style={{ backgroundColor: '#1f6feb', padding: 12, borderRadius: 6, marginBottom: 8 }}>
-        <Text style={{ color: '#fff' }}>{saving ? 'Saving...' : 'Save'}</Text>
+      <Pressable onPress={handleSave} style={{ backgroundColor: tint, padding: 12, borderRadius: 6, marginBottom: 8 }}>
+        <ThemedText style={{ color: '#fff' }}>{saving ? 'Saving...' : 'Save'}</ThemedText>
       </Pressable>
 
       <Pressable onPress={handleDelete} style={{ backgroundColor: '#ff4d4f', padding: 12, borderRadius: 6 }}>
-        <Text style={{ color: '#fff' }}>Delete Hunt</Text>
+        <ThemedText style={{ color: '#fff' }}>Delete Hunt</ThemedText>
       </Pressable>
-    </View>
+    </ThemedView>
   )
 }

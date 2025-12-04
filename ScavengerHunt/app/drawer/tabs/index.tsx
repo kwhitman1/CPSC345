@@ -1,5 +1,9 @@
 import React from "react";
-import { View, Text, Pressable } from "react-native";
+import { Pressable, View } from "react-native";
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import ThemedButton from '@/components/ThemedButton';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { useSession } from "@/context";
 import { router } from "expo-router";
 //
@@ -22,7 +26,7 @@ const TabsIndexScreen = () => {
    */
   const handleLogout = async () => {
     await signOut();
-    router.replace("/sign-in");
+  router.replace("/firebase/SignIn");
   };
 
   // ============================================================================
@@ -39,29 +43,17 @@ const TabsIndexScreen = () => {
   // Render
   // ============================================================================
   
+  const tint = useThemeColor({}, 'tint');
   return (
-    <View className="flex-1 justify-center items-center p-4">
-      {/* Welcome Section */}
-      <View className="items-center mb-8">
-        <Text className="text-xl font-bold text-gray-800 mb-2">
-          Welcome back,
-        </Text>
-        <Text className="text-2xl font-bold text-blue-600">
-          {displayName}
-        </Text>
-        <Text className="text-sm text-gray-500 mt-2">
-          {user?.email}
-        </Text>
+    <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 }}>
+      <View style={{ alignItems: 'center', marginBottom: 24 }}>
+        <ThemedText type="defaultSemiBold" style={{ fontSize: 20, marginBottom: 8 }}>Welcome back,</ThemedText>
+        <ThemedText type="title" style={{ color: tint }}>{displayName}</ThemedText>
+        <ThemedText style={{ marginTop: 8 }}>{user?.email}</ThemedText>
       </View>
-      
-      {/* Logout Button */}
-      <Pressable
-        onPress={handleLogout}
-        className="bg-red-500 px-6 py-3 rounded-lg active:bg-red-600"
-      >
-        <Text className="text-white font-semibold text-base">Logout</Text>
-      </Pressable>
-    </View>
+
+      <ThemedButton title="Logout" onPress={handleLogout} style={{ paddingHorizontal: 24 }} />
+    </ThemedView>
   );
 };
 

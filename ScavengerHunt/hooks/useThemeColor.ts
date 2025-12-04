@@ -11,7 +11,19 @@ export function useThemeColor(
   props: { light?: string; dark?: string },
   colorName: keyof typeof Colors.light & keyof typeof Colors.dark
 ) {
-  const theme = useColorScheme() ?? 'light';
+  const system = useColorScheme() ?? 'light';
+  let theme = system;
+  try {
+    // lazy require to avoid circular imports during module initialization
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const themeMod = require('@/context/theme') as any;
+    if (themeMod && typeof themeMod.useTheme === 'function') {
+      const ctx = themeMod.useTheme();
+      if (ctx && ctx.theme) theme = ctx.theme;
+    }
+  } catch (e) {
+    theme = system;
+  }
   const colorFromProps = props[theme];
 
   if (colorFromProps) {

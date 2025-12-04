@@ -1,24 +1,14 @@
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { Slot } from "expo-router";
-import { StyleSheet, Image, Text, View } from "react-native";
+import React from 'react';
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
-export default function TabTwoScreen() {
+export default function ExploreScreen() {
+  const tint = useThemeColor({}, 'tint');
+
   return (
-    <View style={{ flex: 1 }}>
-      <Text>EXPLORE SCREEN</Text>
-    </View>
+    <ThemedView style={{ flex: 1, padding: 12 }}>
+      <ThemedText style={{ color: tint }}>EXPLORE SCREEN</ThemedText>
+    </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  headerImage: {
-    color: "#808080",
-    bottom: -90,
-    left: -35,
-    position: "absolute",
-  },
-  titleContainer: {
-    flexDirection: "row",
-    gap: 8,
-  },
-});

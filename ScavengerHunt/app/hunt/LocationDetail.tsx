@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Button, Alert, StyleSheet, Platform, TextInput } from 'react-native';
+import { Alert, StyleSheet, Platform, TextInput, Pressable } from 'react-native';
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { getFirestore, doc, onSnapshot, updateDoc } from 'firebase/firestore';
 import app from '@/lib/firebase-config';
 import { Linking } from 'react-native';
 
 export default function LocationDetail() {
-  const params = useLocalSearchParams() as { locationId?: string };
+  const params = useLocalSearchParams() as { locationId?: string; huntId?: string };
   const router = useRouter();
   const locationId = params.locationId;
+  const huntId = params.huntId;
   const db = getFirestore(app);
 
   const [location, setLocation] = useState<any | null>(null);
@@ -38,8 +42,11 @@ export default function LocationDetail() {
   }, [locationId]);
 
   if (!location) return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Loading...</Text></View>
+    <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ThemedText>Loading...</ThemedText></ThemedView>
   );
+
+  const bg = useThemeColor({}, 'background');
+  const tint = useThemeColor({}, 'tint');
 
   const handleMapPress = (evt: any) => {
     const { coordinate } = evt.nativeEvent || {};
@@ -68,28 +75,33 @@ export default function LocationDetail() {
   };
 
   return (
-    <View style={{ padding: 16 }}>
-      <Text style={{ fontSize: 20, fontWeight: '600', marginBottom: 8 }}>{location.locationName}</Text>
-      <Text style={{ color: '#666', marginBottom: 8 }}>{location.explanation}</Text>
+    <ThemedView style={{ padding: 16, backgroundColor: bg }}>
+      {huntId && <ThemedText style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>Completed location from hunt: {huntId}</ThemedText>}
+      <ThemedText style={{ fontSize: 20, fontWeight: '600', marginBottom: 8 }}>{location.locationName}</ThemedText>
+      <ThemedText style={{ color: '#666', marginBottom: 8 }}>{location.explanation}</ThemedText>
 
-      <View style={{ height: 220, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f3f4f6', borderRadius: 8, padding: 8 }}>
-        <Text style={{ color: '#666' }}>Map feature removed</Text>
-      </View>
+      <ThemedView style={{ height: 220, justifyContent: 'center', alignItems: 'center', backgroundColor: bg, borderRadius: 8, padding: 8 }}>
+        <ThemedText style={{ color: '#666' }}>Map feature removed</ThemedText>
+      </ThemedView>
 
-      <View style={{ marginTop: 12 }}>
-        <Text>Latitude</Text>
+      <ThemedView style={{ marginTop: 12 }}>
+        <ThemedText>Latitude</ThemedText>
         <TextInput value={latInput} onChangeText={setLatInput} keyboardType="numeric" style={{ borderWidth: 1, borderColor: '#ddd', padding: 8, borderRadius: 6, marginTop: 6 }} />
-        <Text style={{ marginTop: 8 }}>Longitude</Text>
+        <ThemedText style={{ marginTop: 8 }}>Longitude</ThemedText>
         <TextInput value={lonInput} onChangeText={setLonInput} keyboardType="numeric" style={{ borderWidth: 1, borderColor: '#ddd', padding: 8, borderRadius: 6, marginTop: 6 }} />
 
-        <View style={{ marginTop: 12 }}>
-          <Button title={saving ? 'Saving...' : 'Save coordinates'} onPress={saveCoords} disabled={saving} />
-        </View>
-      </View>
+        <ThemedView style={{ marginTop: 12 }}>
+          <Pressable onPress={saveCoords} disabled={saving} style={{ padding: 10, backgroundColor: tint, borderRadius: 6 }}>
+            <ThemedText style={{ color: '#fff' }}>{saving ? 'Saving...' : 'Save coordinates'}</ThemedText>
+          </Pressable>
+        </ThemedView>
+      </ThemedView>
 
-      <View style={{ height: 12 }} />
-      <Button title="Edit Conditions" onPress={() => router.push(`/ConditionEdit?locationId=${location.id}` as any)} />
-    </View>
+      <ThemedView style={{ height: 12 }} />
+      <Pressable onPress={() => router.push(`/ConditionEdit?locationId=${location.id}` as any)} style={{ padding: 10 }}>
+        <ThemedText>Edit Conditions</ThemedText>
+      </Pressable>
+    </ThemedView>
   );
 }
 

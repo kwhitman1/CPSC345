@@ -1,7 +1,9 @@
 import { useEffect } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { useSession } from "@/context";
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
 
 export default function Splash() {
   const { user, isLoading } = useSession();
@@ -14,9 +16,9 @@ export default function Splash() {
   }, [user, isLoading]);
 
   return (
-    <View className="flex-1 items-center justify-center bg-white">
+    <ThemedView style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
       <ActivityIndicator size="large" color="#2563EB" />
-      <Text className="mt-4 text-gray-700">Checking authentication…</Text>
-    </View>
+      <ThemedText style={{ marginTop: 12 }}>Checking authentication…</ThemedText>
+    </ThemedView>
   );
 }

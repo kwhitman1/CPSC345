@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Pressable, Alert, Image, StyleSheet, Dimensions } from "react-native";
+import { View, TextInput, Pressable, Alert, Image, StyleSheet, Dimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   getFirestore,
@@ -22,13 +22,21 @@ import * as Location from 'expo-location';
 import { Linking, Platform } from 'react-native';
 import app from "@/lib/firebase-config";
 import { useSession } from "@/context";
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTheme } from '@/context/theme';
 
 
-const MapPlaceholder = ({ width, height }: { width: number; height: number }) => (
-  <View style={{ width, height, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f3f4f6', borderRadius: 8 }}>
-    <Text style={{ color: '#666' }}>Map feature removed</Text>
-  </View>
-);
+const MapPlaceholder = ({ width, height }: { width: number; height: number }) => {
+  const bg = useThemeColor({}, 'background');
+  const muted = useThemeColor({}, 'icon');
+  return (
+    <View style={{ width, height, justifyContent: 'center', alignItems: 'center', backgroundColor: bg, borderRadius: 8 }}>
+      <ThemedText style={{ color: muted }}>Map feature removed</ThemedText>
+    </View>
+  );
+};
 
 function RuntimeMap({ latitude, longitude, devicePos, width, height }: { latitude: number | null | undefined; longitude: number | null | undefined; devicePos?: { latitude: number; longitude: number } | null; width: number; height: number }) {
   if (latitude == null || longitude == null) return <MapPlaceholder width={width} height={height} />;
@@ -378,25 +386,31 @@ export default function HuntDetail() {
     }
   };
 
+  // theme-aware colors
+  const backgroundColor = useThemeColor({}, 'background');
+  const tintColor = useThemeColor({}, 'tint');
+  const iconColor = useThemeColor({}, 'icon');
+  const textColor = useThemeColor({}, 'text');
+  const { theme } = useTheme();
 
   if (!hunt) return (
-    <View style={{flex:1,justifyContent:'center',alignItems:'center'}}><Text>Loading...</Text></View>
+    <ThemedView style={{flex:1,justifyContent:'center',alignItems:'center'}}><ThemedText>Loading...</ThemedText></ThemedView>
   )
 
   return (
-    <View style={{ padding: 16 }}>
-      <Text style={{ marginBottom: 8, color: '#444' }}>Locations in this hunt: {locationCount}</Text>
-      <Pressable onPress={() => router.push(`/LocationList?huntId=${huntId}` as any)} style={{ padding: 10, backgroundColor: '#eee', borderRadius: 6, marginBottom: 12 }}>
-        <Text>{isOwner ? 'Manage Locations' : 'View Locations'}</Text>
+    <ThemedView style={{ padding: 16, backgroundColor: backgroundColor }}>
+      <ThemedText style={{ marginBottom: 8 }}>Locations in this hunt: {locationCount}</ThemedText>
+      <Pressable onPress={() => router.push(`/hunt/LocationList?huntId=${huntId}` as any)} style={{ padding: 10, backgroundColor: backgroundColor, borderRadius: 6, marginBottom: 12 }}>
+        <ThemedText>{isOwner ? 'Manage Locations' : 'View Locations'}</ThemedText>
       </Pressable>
 
       { !playerHunt && locations && locations.length > 0 ? (
         <View style={{ marginBottom: 12 }}>
-          <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>Locations (preview)</Text>
+          <ThemedText style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>Locations (preview)</ThemedText>
           {locations.map((loc) => (
             <View key={loc.id} style={{ padding: 10, borderWidth: 1, borderColor: '#eee', borderRadius: 6, marginBottom: 8, backgroundColor: '#fafafa' }}>
-              <Text style={{ fontSize: 14, fontWeight: '600' }}>🔒 {loc.locationName || 'Location'}</Text>
-              {loc.explanation ? <Text style={{ color: '#666', marginTop: 6 }}>{loc.explanation}</Text> : <Text style={{ color: '#999', marginTop: 6 }}>Clue not provided</Text>}
+              <ThemedText style={{ fontSize: 14, fontWeight: '600' }}>🔒 {loc.locationName || 'Location'}</ThemedText>
+              {loc.explanation ? <ThemedText style={{ color: '#666', marginTop: 6 }}>{loc.explanation}</ThemedText> : <ThemedText style={{ color: '#999', marginTop: 6 }}>Clue not provided</ThemedText>}
             </View>
           ))}
         </View>
@@ -404,20 +418,20 @@ export default function HuntDetail() {
 
       { !playerHunt ? (
         <Pressable onPress={handleStartHunt} style={{ padding: 10, backgroundColor: '#16a34a', borderRadius: 6, marginBottom: 12 }}>
-          <Text style={{ color: '#fff' }}>Start Playing Hunt</Text>
+          <ThemedText style={{ color: '#fff' }}>Start Playing Hunt</ThemedText>
         </Pressable>
       ) : null}
 
       { playerHunt && playerHunt.status === 'STARTED' ? (
         <Pressable onPress={handleAbandon} style={{ padding: 10, backgroundColor: '#ff4d4f', borderRadius: 6, marginBottom: 12 }}>
-          <Text style={{ color: '#fff' }}>Abandon Hunt</Text>
+          <ThemedText style={{ color: '#fff' }}>Abandon Hunt</ThemedText>
         </Pressable>
       ) : null }
       
       <View style={{ marginTop: 8, marginBottom: 16 }}>
-        <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>Location Progress</Text>
+        <ThemedText style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>Location Progress</ThemedText>
         {locations.length === 0 ? (
-          <Text style={{ color: '#666' }}>No locations yet</Text>
+          <ThemedText style={{ color: '#666' }}>No locations yet</ThemedText>
         ) : (
           locations.map((loc) => {
             const completed = userFoundIds ? userFoundIds.has(loc.id) : false;
@@ -425,17 +439,17 @@ export default function HuntDetail() {
             const available = isLocationAvailable(loc);
             return (
               <View key={loc.id} style={{ padding: 10, borderWidth: 1, borderColor: '#eee', borderRadius: 6, marginBottom: 8 }}>
-                <Text style={{ fontSize: 15, fontWeight: '600' }}>{loc.locationName || 'Location'}</Text>
-                {loc.explanation ? <Text style={{ color: '#666', marginTop: 6 }}>{loc.explanation}</Text> : null}
+                <ThemedText style={{ fontSize: 15, fontWeight: '600' }}>{loc.locationName || 'Location'}</ThemedText>
+                {loc.explanation ? <ThemedText style={{ color: '#666', marginTop: 6 }}>{loc.explanation}</ThemedText> : null}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-                  <Text style={{ color: completed ? '#059669' : '#9ca3af' }}>{completed ? '✅ Completed' : '⭕ Not completed'}</Text>
-                  <Text style={{ color: '#333' }}>Check-ins: {total}</Text>
+                  <ThemedText style={{ color: completed ? '#059669' : '#9ca3af' }}>{completed ? '✅ Completed' : '⭕ Not completed'}</ThemedText>
+                  <ThemedText style={{ color: '#333' }}>Check-ins: {total}</ThemedText>
                 </View>
                 {available && !completed ? (
                   <View style={{ marginTop: 8 }}>
                     <View style={{ flexDirection: 'row' }}>
                       <Pressable onPress={() => setGuidedLocationId(loc.id)} style={{ padding: 8, backgroundColor: '#0ea5df', borderRadius: 6 }}>
-                        <Text style={{ color: '#fff' }}>Guide</Text>
+                        <ThemedText style={{ color: '#fff' }}>Guide</ThemedText>
                       </Pressable>
                     </View>
 
@@ -454,10 +468,10 @@ export default function HuntDetail() {
                     const b = bearingTo(devicePos.latitude, devicePos.longitude, Number(loc.latitude), Number(loc.longitude));
                     return (
                       <View style={{ marginTop: 8 }}>
-                        <Text style={{ color: '#111' }}>Distance: {d >= 1000 ? `${(d/1000).toFixed(2)} km` : `${Math.round(d)} m`}</Text>
-                        <Text style={{ color: '#111' }}>Bearing: {Math.round(b)}°</Text>
+                        <ThemedText style={{ color: theme === 'dark' ? '#fff' : textColor }}>Distance: {d >= 1000 ? `${(d/1000).toFixed(2)} km` : `${Math.round(d)} m`}</ThemedText>
+                        <ThemedText style={{ color: theme === 'dark' ? '#fff' : textColor }}>Bearing: {Math.round(b)}°</ThemedText>
                         <Pressable onPress={() => setGuidedLocationId(null)} style={{ marginTop: 8, padding: 8, backgroundColor: '#ef4444', borderRadius: 6 }}>
-                          <Text style={{ color: '#fff' }}>Stop guiding</Text>
+                          <ThemedText style={{ color: '#fff' }}>Stop guiding</ThemedText>
                         </Pressable>
                       </View>
                     );
@@ -471,7 +485,7 @@ export default function HuntDetail() {
       </View>
       {isOwner ? (
         <>
-          <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>Edit Hunt</Text>
+          <ThemedText style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>Edit Hunt</ThemedText>
 
           <TextInput
             value={name}
@@ -480,21 +494,19 @@ export default function HuntDetail() {
             maxLength={255}
           />
 
-          
-
           <Pressable onPress={handleSave} style={{ backgroundColor: '#1f6feb', padding: 12, borderRadius: 6, marginBottom: 8 }}>
-            <Text style={{ color: '#fff' }}>{saving ? 'Saving...' : 'Save'}</Text>
+            <ThemedText style={{ color: '#fff' }}>{saving ? 'Saving...' : 'Save'}</ThemedText>
           </Pressable>
 
           <Pressable onPress={handleDelete} style={{ backgroundColor: '#ff4d4f', padding: 12, borderRadius: 6 }}>
-            <Text style={{ color: '#fff' }}>Delete Hunt</Text>
+            <ThemedText style={{ color: '#fff' }}>Delete Hunt</ThemedText>
           </Pressable>
         </>
     ) : (
         <View style={{ marginTop: 12 }}>
-          <Text style={{ fontSize: 20, fontWeight: '700' }}>{hunt.name}</Text>
+          <ThemedText style={{ fontSize: 20, fontWeight: '700' }}>{hunt.name}</ThemedText>
         </View>
       )}
-    </View>
+    </ThemedView>
   )
 }

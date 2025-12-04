@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Pressable, FlatList, Alert } from 'react-native';
+import { TextInput, Pressable, FlatList, Alert } from 'react-native';
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { useTheme } from '@/context/theme';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
@@ -241,41 +245,80 @@ export default function LocationList() {
     }
   };
 
+  const background = useThemeColor({}, 'background');
+  const tint = useThemeColor({}, 'tint');
+  const text = useThemeColor({}, 'text');
+  const icon = useThemeColor({}, 'icon');
+  const { theme } = useTheme();
+
+  // compute input border and placeholder colors: in dark mode use white-ish, otherwise use muted borders
+  const inputBorderColor = theme === 'dark' ? '#fff' : '#ddd';
+  const placeholderColor = theme === 'dark' ? '#fff' : '#666';
+
   return (
-    <View style={{ flex: 1 }}>
-      <View style={{ flex: 1, padding: 16 }}>
-      <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>Locations</Text>
+    <ThemedView style={{ flex: 1 }}>
+      <ThemedView style={{ flex: 1, padding: 16, backgroundColor: background }}>
+      <ThemedText style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 8 }}>Locations</ThemedText>
 
       {isOwner ? (
-        <View style={{ marginBottom: 12 }}>
-          <TextInput placeholder="Location name" value={name} onChangeText={setName} style={{ borderWidth: 1, padding: 8, marginBottom: 8 }} />
-          <TextInput placeholder="Explanation" value={explanation} onChangeText={setExplanation} style={{ borderWidth: 1, padding: 8, marginBottom: 8 }} />
-          <TextInput placeholder="Latitude (e.g. 47.6062)" value={latitude} onChangeText={setLatitude} style={{ borderWidth: 1, padding: 8, marginBottom: 8 }} keyboardType="numeric" />
-          <TextInput placeholder="Longitude (e.g. -122.3321)" value={longitude} onChangeText={setLongitude} style={{ borderWidth: 1, padding: 8, marginBottom: 8 }} keyboardType="numeric" />
-          <Pressable onPress={handleCreate} style={{ padding: 12, backgroundColor: '#1f6feb', borderRadius: 6 }}>
-            <Text style={{ color: '#fff' }}>{creating ? 'Creating...' : 'Add New Location'}</Text>
+        <ThemedView style={{ marginBottom: 12 }}>
+          <TextInput
+            placeholder="Location name"
+            placeholderTextColor={placeholderColor}
+            value={name}
+            onChangeText={setName}
+            style={{ borderWidth: 1, borderColor: inputBorderColor, padding: 8, marginBottom: 8 }}
+          />
+          <TextInput
+            placeholder="Explanation"
+            placeholderTextColor={placeholderColor}
+            value={explanation}
+            onChangeText={setExplanation}
+            style={{ borderWidth: 1, borderColor: inputBorderColor, padding: 8, marginBottom: 8 }}
+          />
+          <TextInput
+            placeholder="Latitude (e.g. 47.6062)"
+            placeholderTextColor={placeholderColor}
+            value={latitude}
+            onChangeText={setLatitude}
+            style={{ borderWidth: 1, borderColor: inputBorderColor, padding: 8, marginBottom: 8 }}
+            keyboardType="numeric"
+          />
+          <TextInput
+            placeholder="Longitude (e.g. -122.3321)"
+            placeholderTextColor={placeholderColor}
+            value={longitude}
+            onChangeText={setLongitude}
+            style={{ borderWidth: 1, borderColor: inputBorderColor, padding: 8, marginBottom: 8 }}
+            keyboardType="numeric"
+          />
+          <Pressable onPress={handleCreate} style={{ padding: 12, backgroundColor: tint, borderRadius: 6 }}>
+            <ThemedText style={{ color: theme === 'dark' ? '#000' : text }}>{creating ? 'Creating...' : 'Add New Location'}</ThemedText>
           </Pressable>
-        </View>
+        </ThemedView>
       ) : (
-        <View style={{ marginBottom: 12 }}>
-          <Text style={{ color: '#666' }}>Only the hunt owner can add new locations.</Text>
-        </View>
+        <ThemedView style={{ marginBottom: 12 }}>
+          <ThemedText style={{ color: icon }}>Only the hunt owner can add new locations.</ThemedText>
+        </ThemedView>
       )}
 
       <FlatList
         data={visibleLocations}
         keyExtractor={(i) => i.id}
         renderItem={({ item }) => (
-          <Pressable onPress={() => router.push(`/LocationDetail?locationId=${item.id}` as any)} style={{ padding: 12, borderBottomWidth: 1, borderColor: '#eee' }}>
-            <Text style={{ fontSize: 16, fontWeight: '600' }}>{item.locationName}</Text>
-            <Text style={{ color: '#666' }}>{item.explanation}</Text>
-            <Pressable onPress={() => handleCheckIn(item)} style={{ marginTop: 6, padding: 8, backgroundColor: '#1f6feb', borderRadius: 6 }}>
-              <Text style={{ color: '#fff' }}>Check In</Text>
+          <Pressable
+            onPress={() => router.push(`/LocationDetail?locationId=${item.id}` as any)}
+            style={{ padding: 12, borderBottomWidth: 1, borderColor: theme === 'dark' ? '#333' : '#eee' }}
+          >
+            <ThemedText style={{ fontSize: 16, fontWeight: '600' }}>{item.locationName}</ThemedText>
+            <ThemedText style={{ color: icon }}>{item.explanation}</ThemedText>
+            <Pressable onPress={() => handleCheckIn(item)} style={{ marginTop: 6, padding: 8, backgroundColor: tint, borderRadius: 6 }}>
+              <ThemedText style={{ color: theme === 'dark' ? '#000' : text }}>Check In</ThemedText>
             </Pressable>
           </Pressable>
         )}
       />
-      </View>
-    </View>
+      </ThemedView>
+    </ThemedView>
   );
 }

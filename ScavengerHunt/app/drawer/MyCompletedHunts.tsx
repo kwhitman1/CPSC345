@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { FlatList, ActivityIndicator, Pressable, SafeAreaView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { useRouter } from 'expo-router';
 import { getFirestore, collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 import app from '@/lib/firebase-config';
@@ -13,6 +17,12 @@ export default function MyCompletedHunts() {
   const [loading, setLoading] = useState(true);
   const [completedHunts, setCompletedHunts] = useState<any[]>([]);
   const [progressMap, setProgressMap] = useState<Record<string, number | null>>({});
+  const border = useThemeColor({}, 'icon');
+  const tint = useThemeColor({}, 'tint');
+  const text = useThemeColor({}, 'text');
+  const background = useThemeColor({}, 'background');
+  const insets = useSafeAreaInsets();
+  const TOP_SAFE_EXTRA = 64; // extra offset to keep header / burger menu from overlapping top content
 
   useEffect(() => {
     if (!user) {
@@ -102,27 +112,29 @@ export default function MyCompletedHunts() {
     return () => { mounted = false; };
   }, [completedHunts, user, db]);
 
-  if (loading) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator/></View>;
+  if (loading) return <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator/></ThemedView>;
 
   return (
-    <View style={{ flex: 1, padding: 12 }}>
-      <View style={{ alignItems: 'center', marginBottom: 16 }}>
-        <Text style={{ fontSize: 64, marginBottom: 8 }}>🎉</Text>
-        <Text style={{ fontSize: 20, fontWeight: '700' }}>Congratulations!</Text>
-        <Text style={{ color: '#666', marginTop: 4 }}>You've completed these hunts.</Text>
-      </View>
+    <ThemedView style={{ flex: 1 }}>
+  <SafeAreaView style={{ flex: 1, padding: 12, paddingTop: (insets.top || 0) + 8 + TOP_SAFE_EXTRA, backgroundColor: background as string }}>
+      <ThemedView style={{ alignItems: 'center', marginBottom: 16 }}>
+  <ThemedText style={{ fontSize: 64, marginBottom: 8, lineHeight: 76 }}>🎉</ThemedText>
+        <ThemedText style={{ fontSize: 20, fontWeight: '700' }}>Congratulations!</ThemedText>
+  <ThemedText style={{ color: text as string, marginTop: 4 }}>You've completed these hunts.</ThemedText>
+      </ThemedView>
 
-      <FlatList
+  <FlatList
         data={completedHunts}
         keyExtractor={i => i.id}
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => router.push(`/hunt/${item.huntId}`)} style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' }}>
-            <Text style={{ fontSize: 16, fontWeight: '600' }}>{item.huntName}</Text>
-            {progressMap[item.huntId] != null && <Text style={{ marginTop: 6, color: '#333' }}>Progress: {progressMap[item.huntId]}%</Text>}
-          </TouchableOpacity>
+          <Pressable onPress={() => router.push(`/hunt/${item.huntId}`)} style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: border as string }}>
+            <ThemedText style={{ fontSize: 16, fontWeight: '600' }}>{item.huntName}</ThemedText>
+            {progressMap[item.huntId] != null && <ThemedText style={{ marginTop: 6, color: text as string }}>Progress: {progressMap[item.huntId]}%</ThemedText>}
+          </Pressable>
         )}
-        ListEmptyComponent={() => <Text>No completed hunts yet</Text>}
+        ListEmptyComponent={() => <ThemedText>No completed hunts yet</ThemedText>}
       />
-    </View>
+      </SafeAreaView>
+    </ThemedView>
   );
 }

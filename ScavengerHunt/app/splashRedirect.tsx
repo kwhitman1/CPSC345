@@ -11,7 +11,7 @@ export default function AppLayout() {
 
   if (!user) {
     // Cast href to any to satisfy expo-router generated route union types
-    return <Redirect href={"/SignIn" as any} />;
+    return <Redirect href={"/firebase/SignIn" as any} />;
   }
 
   return <Slot />;

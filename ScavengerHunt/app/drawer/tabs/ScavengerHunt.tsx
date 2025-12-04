@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, FlatList, Pressable, Alert, Switch } from "react-native";
+import { TextInput, FlatList, Alert, Switch } from "react-native";
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { Pressable } from 'react-native';
 import { useSession } from "@/context";
 import { useRouter } from "expo-router";
 import { useDispatch, useSelector } from 'react-redux';
@@ -17,6 +21,10 @@ export default function ScavengerHunt() {
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [multiMode, setMultiMode] = useState(false);
+
+  // theme colors (call hooks at top-level of component)
+  const tint = useThemeColor({}, 'tint');
+  const iconColor = useThemeColor({}, 'icon');
 
   useEffect(() => {
   if (!user) return;
@@ -137,31 +145,31 @@ export default function ScavengerHunt() {
   };
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <Text style={{ fontSize: 20, fontWeight: "bold" }}>Your Hunts</Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Pressable onPress={handleBulkDelete} style={{ padding: 8, backgroundColor: Object.values(selected).filter(Boolean).length ? '#dc2626' : '#9ca3af', borderRadius: 6 }}>
-              <Text style={{ color: '#fff' }}>Delete Selected ({Object.values(selected).filter(Boolean).length})</Text>
+    <ThemedView style={{ flex: 1, padding: 16 }}>
+      <ThemedView style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <ThemedText style={{ fontSize: 20, fontWeight: "bold" }}>Your Hunts</ThemedText>
+          <ThemedView style={{ flexDirection: 'row', gap: 8 }}>
+            <Pressable onPress={handleBulkDelete} style={{ padding: 8, backgroundColor: Object.values(selected).filter(Boolean).length ? tint : iconColor, borderRadius: 6 }}>
+              <ThemedText style={{ color: '#000' }}>Delete Selected ({Object.values(selected).filter(Boolean).length})</ThemedText>
             </Pressable>
-            <Pressable onPress={clearSelection} style={{ padding: 8, backgroundColor: '#6b7280', borderRadius: 6, marginLeft: 8 }}>
-              <Text style={{ color: '#fff' }}>Clear</Text>
+            <Pressable onPress={clearSelection} style={{ padding: 8, backgroundColor: iconColor, borderRadius: 6, marginLeft: 8 }}>
+              <ThemedText style={{ color: '#000' }}>Clear</ThemedText>
             </Pressable>
-          </View>
-      </View>
+          </ThemedView>
+      </ThemedView>
 
-      <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
+      <ThemedView style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
         <TextInput
           placeholder="New hunt name"
           value={name}
           onChangeText={setName}
-          style={{ flex: 1, borderWidth: 1, borderColor: "#ddd", padding: 8, borderRadius: 6 }}
+          style={{ flex: 1, borderWidth: 1, borderColor: iconColor as string, padding: 8, borderRadius: 6 }}
           maxLength={255}
         />
-        <Pressable onPress={handleCreate} style={{ padding: 10, backgroundColor: "#1f6feb", borderRadius: 6 }}>
-          <Text style={{ color: "#fff" }}>{creating ? "Create" : "Create"}</Text>
+  <Pressable onPress={handleCreate} style={{ padding: 10, backgroundColor: tint, borderRadius: 6 }}>
+          <ThemedText style={{ color: "#000" }}>{creating ? "Create" : "Create"}</ThemedText>
         </Pressable>
-      </View>
+      </ThemedView>
 
       <FlatList
         data={hunts}
@@ -169,16 +177,16 @@ export default function ScavengerHunt() {
         renderItem={({ item }) => (
           <Pressable
             onPress={() => (multiMode ? toggleSelect(item.id) : router.push(`/hunt/${item.id}` as any))}
-            style={{ padding: 12, borderBottomWidth: 1, borderColor: "#eee", flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+            style={{ padding: 12, borderBottomWidth: 1, borderColor: iconColor as string, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <ThemedView style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <Pressable onPress={() => toggleSelect(item.id)} style={{ padding: 8 }}>
-                <Text>{selected[item.id] ? '☑️' : '⬜'}</Text>
+                <ThemedText>{selected[item.id] ? '☑️' : '⬜'}</ThemedText>
               </Pressable>
-              <Text style={{ fontSize: 16 }}>{item.name}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Text style={{ marginRight: 8 }}>{(item as any).isVisible ? 'Public' : 'Private'}</Text>
+              <ThemedText style={{ fontSize: 16 }}>{item.name}</ThemedText>
+            </ThemedView>
+            <ThemedView style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <ThemedText style={{ marginRight: 8 }}>{(item as any).isVisible ? 'Public' : 'Private'}</ThemedText>
               <Switch value={!!(item as any).isVisible} onValueChange={async (val) => {
                 try {
                   const db = getFirestore(app);
@@ -188,10 +196,10 @@ export default function ScavengerHunt() {
                   Alert.alert('Update failed', 'Could not update visibility');
                 }
               }} />
-            </View>
+            </ThemedView>
           </Pressable>
         )}
       />
-    </View>
+    </ThemedView>
   );
 }

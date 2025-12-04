@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, Button, Alert, FlatList, TouchableOpacity } from "react-native";
+import { TextInput, Alert, FlatList, Pressable } from "react-native";
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDoc, serverTimestamp, getFirestore } from "firebase/firestore";
 import app, { getFirebaseAuth } from "@/lib/firebase-config";
@@ -185,84 +188,94 @@ export default function ConditionEdit() {
 
   if (!locationId) {
     return (
-      <View style={{ flex: 1, padding: 16, justifyContent: "center", alignItems: "center" }}>
-        <Text>Missing locationId</Text>
-      </View>
+      <ThemedView style={{ flex: 1, padding: 16, justifyContent: "center", alignItems: "center" }}>
+        <ThemedText>Missing locationId</ThemedText>
+      </ThemedView>
     );
   }
+  const bg = useThemeColor({}, 'background');
+  const tint = useThemeColor({}, 'tint');
 
   return (
-    <View style={{ flex: 1, padding: 16 }}>
-      <Text style={{ fontSize: 18, fontWeight: "600", marginBottom: 12 }}>Conditions for location</Text>
+    <ThemedView style={{ flex: 1, padding: 16, backgroundColor: bg }}>
+      <ThemedText style={{ fontSize: 18, fontWeight: "600", marginBottom: 12 }}>Conditions for location</ThemedText>
 
-      <View style={{ marginBottom: 12 }}>
-        <Text style={{ marginBottom: 6 }}>Type</Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <TouchableOpacity onPress={() => setFormType("REQUIRED_LOCATION")} style={{ padding: 8, backgroundColor: formType === "REQUIRED_LOCATION" ? "#ddd" : "#fff" }}>
-            <Text>Required Location</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setFormType("TIME_WINDOW")} style={{ padding: 8, backgroundColor: formType === "TIME_WINDOW" ? "#ddd" : "#fff" }}>
-            <Text>Time Window</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <ThemedView style={{ marginBottom: 12 }}>
+        <ThemedText style={{ marginBottom: 6 }}>Type</ThemedText>
+        <ThemedView style={{ flexDirection: "row", gap: 8 }}>
+          <Pressable onPress={() => setFormType("REQUIRED_LOCATION")} style={{ padding: 8, backgroundColor: formType === "REQUIRED_LOCATION" ? tint : undefined }}>
+            <ThemedText>Required Location</ThemedText>
+          </Pressable>
+          <Pressable onPress={() => setFormType("TIME_WINDOW")} style={{ padding: 8, backgroundColor: formType === "TIME_WINDOW" ? tint : undefined }}>
+            <ThemedText>Time Window</ThemedText>
+          </Pressable>
+        </ThemedView>
+      </ThemedView>
 
       {formType === "REQUIRED_LOCATION" ? (
-        <View style={{ marginBottom: 12 }}>
-          <Text style={{ marginBottom: 6 }}>Required Location</Text>
+        <ThemedView style={{ marginBottom: 12 }}>
+          <ThemedText style={{ marginBottom: 6 }}>Required Location</ThemedText>
           {siblingLocations.length === 0 ? (
-            <Text style={{ color: "#666" }}>No other locations in this hunt</Text>
+            <ThemedText style={{ color: "#666" }}>No other locations in this hunt</ThemedText>
           ) : (
             siblingLocations.map((loc) => (
-              <TouchableOpacity key={loc.id} onPress={() => setRequiredLocationId(loc.id)} style={{ padding: 8, backgroundColor: requiredLocationId === loc.id ? "#cce" : "#fff", marginBottom: 6 }}>
-                <Text>{loc.name}</Text>
-              </TouchableOpacity>
+              <Pressable key={loc.id} onPress={() => setRequiredLocationId(loc.id)} style={{ padding: 8, backgroundColor: requiredLocationId === loc.id ? tint : undefined, marginBottom: 6 }}>
+                <ThemedText>{loc.name}</ThemedText>
+              </Pressable>
             ))
           )}
-        </View>
+        </ThemedView>
       ) : (
-        <View style={{ marginBottom: 12 }}>
-          <Text style={{ marginBottom: 6 }}>Start Time (local HH:MM)</Text>
+        <ThemedView style={{ marginBottom: 12 }}>
+          <ThemedText style={{ marginBottom: 6 }}>Start Time (local HH:MM)</ThemedText>
           <TextInput value={startLocal} onChangeText={setStartLocal} placeholder="08:30" style={{ borderWidth: 1, padding: 8, marginBottom: 8 }} />
-          <Text style={{ marginBottom: 6 }}>End Time (local HH:MM)</Text>
+          <ThemedText style={{ marginBottom: 6 }}>End Time (local HH:MM)</ThemedText>
           <TextInput value={endLocal} onChangeText={setEndLocal} placeholder="14:00" style={{ borderWidth: 1, padding: 8 }} />
-        </View>
+        </ThemedView>
       )}
 
-      <Button title={editingId ? "Save changes" : "Add condition"} onPress={handleSave} />
+      <Pressable onPress={handleSave} style={{ padding: 10, backgroundColor: tint, borderRadius: 6 }}>
+        <ThemedText style={{ color: '#fff' }}>{editingId ? "Save changes" : "Add condition"}</ThemedText>
+      </Pressable>
 
-      <View style={{ height: 1, backgroundColor: "#eee", marginVertical: 12 }} />
+      <ThemedView style={{ height: 1, backgroundColor: "#eee", marginVertical: 12 }} />
 
-      <Text style={{ fontSize: 16, marginBottom: 8 }}>Existing conditions</Text>
+      <ThemedText style={{ fontSize: 16, marginBottom: 8 }}>Existing conditions</ThemedText>
       {loading ? (
-        <Text>Loading...</Text>
+        <ThemedText>Loading...</ThemedText>
       ) : conditions.length === 0 ? (
-        <Text style={{ color: "#666" }}>No conditions</Text>
+        <ThemedText style={{ color: "#666" }}>No conditions</ThemedText>
       ) : (
         <FlatList
           data={conditions}
           keyExtractor={(i) => i.id}
           renderItem={({ item }) => (
-            <View style={{ padding: 8, borderWidth: 1, borderColor: "#eee", marginBottom: 8 }}>
-              <Text style={{ fontWeight: "600" }}>{item.type}</Text>
+            <ThemedView style={{ padding: 8, borderWidth: 1, borderColor: "#eee", marginBottom: 8 }}>
+              <ThemedText style={{ fontWeight: "600" }}>{item.type}</ThemedText>
               {item.type === "REQUIRED_LOCATION" ? (
-                <Text>Requires location: {item.requiredLocationId}</Text>
+                <ThemedText>Requires location: {item.requiredLocationId}</ThemedText>
               ) : (
-                <Text>
+                <ThemedText>
                   Time window: {utcStringToLocal(item.startTime)} - {utcStringToLocal(item.endTime)} (local)
-                </Text>
+                </ThemedText>
               )}
-              <View style={{ flexDirection: "row", marginTop: 8 }}>
-                <Button title="Edit" onPress={() => startEdit(item)} />
-                <View style={{ width: 12 }} />
-                <Button title="Delete" color="red" onPress={() => handleDelete(item)} />
-              </View>
-            </View>
+              <ThemedView style={{ flexDirection: "row", marginTop: 8 }}>
+                <Pressable onPress={() => startEdit(item)} style={{ padding: 8, backgroundColor: tint, borderRadius: 6 }}>
+                  <ThemedText>Edit</ThemedText>
+                </Pressable>
+                <ThemedView style={{ width: 12 }} />
+                <Pressable onPress={() => handleDelete(item)} style={{ padding: 8, backgroundColor: '#ff4d4f', borderRadius: 6 }}>
+                  <ThemedText style={{ color: '#fff' }}>Delete</ThemedText>
+                </Pressable>
+              </ThemedView>
+            </ThemedView>
           )}
         />
       )}
-      <View style={{ height: 20 }} />
-      <Button title="Done" onPress={() => router.back()} />
-    </View>
+      <ThemedView style={{ height: 20 }} />
+      <Pressable onPress={() => router.back()} style={{ padding: 10 }}>
+        <ThemedText>Done</ThemedText>
+      </Pressable>
+    </ThemedView>
   );
 }

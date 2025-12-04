@@ -190,7 +190,7 @@ export function SessionProvider(props: { children: React.ReactNode }) {
       // clear local user state and navigate back to sign-in
       setUser(null);
       try {
-        router.replace("/sign-in");
+        router.replace("./SignIn");
       } catch (e) {
         // router may not be ready in some contexts; log but continue
         console.warn("[handleSignOut] router.replace failed", e);

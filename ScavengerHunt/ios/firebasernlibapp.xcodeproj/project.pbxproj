@@ -14,7 +14,7 @@
 		96905EF65AED1B983A6B3ABC /* libPods-firebasernlibapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 58EEBF8E8E6FB1BC6CAF49B5 /* libPods-firebasernlibapp.a */; };
 		B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		0254086E2B564B9AA5F84B3E /* noop-file.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20A75B031134EA5BFD8557A /* noop-file.swift */; };
+		7780A7B798424A71926FE151 /* noop-file.swift in Sources */ = {isa = PBXBuildFile; fileRef = B29385B41E6D449884DE07E1 /* noop-file.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,8 +31,8 @@
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-firebasernlibapp/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		A20A75B031134EA5BFD8557A /* noop-file.swift */ = {isa = PBXFileReference; name = "noop-file.swift"; path = "firebasernlibapp/noop-file.swift"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
-		44E54E5A2EB74E3DBF7E7856 /* firebasernlibapp-Bridging-Header.h */ = {isa = PBXFileReference; name = "firebasernlibapp-Bridging-Header.h"; path = "firebasernlibapp/firebasernlibapp-Bridging-Header.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
+		B29385B41E6D449884DE07E1 /* noop-file.swift */ = {isa = PBXFileReference; name = "noop-file.swift"; path = "firebasernlibapp/noop-file.swift"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
+		99FCEF80B91545D39BF3ED32 /* firebasernlibapp-Bridging-Header.h */ = {isa = PBXFileReference; name = "firebasernlibapp-Bridging-Header.h"; path = "firebasernlibapp/firebasernlibapp-Bridging-Header.h"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,8 +57,8 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				13B07FB71A68108700A75B9A /* main.m */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				A20A75B031134EA5BFD8557A /* noop-file.swift */,
-				44E54E5A2EB74E3DBF7E7856 /* firebasernlibapp-Bridging-Header.h */,
+				B29385B41E6D449884DE07E1 /* noop-file.swift */,
+				99FCEF80B91545D39BF3ED32 /* firebasernlibapp-Bridging-Header.h */,
 			);
 			name = firebasernlibapp;
 			sourceTree = "<group>";
@@ -198,7 +198,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				4AEFF950055246B293BB5811 /* firebasernlibapp-Bridging-Header.h in Resources */,
+				EF15C92D5302492C9DDB91C8 /* firebasernlibapp-Bridging-Header.h in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -274,7 +274,7 @@
 				13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
 				B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */,
-				0254086E2B564B9AA5F84B3E /* noop-file.swift in Sources */,
+				7780A7B798424A71926FE151 /* noop-file.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -309,6 +309,10 @@
 				VERSIONING_SYSTEM = "apple-generic";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				SWIFT_OBJC_BRIDGING_HEADER = firebasernlibapp/firebasernlibapp-Bridging-Header.h;
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = (
+					IconA,
+					IconB,
+				);
 				CODE_SIGN_ENTITLEMENTS = firebasernlibapp/firebasernlibapp.entitlements;
 			};
 			name = Debug;
@@ -335,6 +339,10 @@
 				VERSIONING_SYSTEM = "apple-generic";
 				TARGETED_DEVICE_FAMILY = "1,2";
 				SWIFT_OBJC_BRIDGING_HEADER = firebasernlibapp/firebasernlibapp-Bridging-Header.h;
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = (
+					IconA,
+					IconB,
+				);
 				CODE_SIGN_ENTITLEMENTS = firebasernlibapp/firebasernlibapp.entitlements;
 			};
 			name = Release;
@@ -392,6 +400,10 @@
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = (
+					IconA,
+					IconB,
+				);
 			};
 			name = Debug;
 		};
@@ -441,6 +453,10 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = (
+					IconA,
+					IconB,
+				);
 			};
 			name = Release;
 		};

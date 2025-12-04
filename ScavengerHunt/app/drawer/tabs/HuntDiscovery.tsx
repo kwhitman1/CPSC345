@@ -1,5 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { TextInput, FlatList, ActivityIndicator } from 'react-native';
+import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from '@/components/ThemedText';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { collection, getFirestore, onSnapshot, query, where, getDocs } from 'firebase/firestore';
 import app from '@/lib/firebase-config';
@@ -16,6 +20,8 @@ export default function HuntDiscovery() {
   const db = getFirestore(app);
   const router = useRouter();
   const { user } = useSession();
+  const tint = useThemeColor({}, 'tint');
+  const border = useThemeColor({}, 'icon');
 
   const [queryText, setQueryText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -118,24 +124,24 @@ export default function HuntDiscovery() {
     return hunts.filter(h => (h.name || '').toLowerCase().includes(t));
   }, [hunts, queryText]);
 
-  if (loading) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator/></View>;
+  if (loading) return <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator/></ThemedView>;
 
   return (
-    <View style={{ flex: 1, padding: 12 }}>
-      <TextInput placeholder="Search hunts" value={queryText} onChangeText={setQueryText} style={{ borderWidth: 1, borderColor: '#ddd', padding: 8, borderRadius: 8, marginBottom: 12 }} />
+    <ThemedView style={{ flex: 1, padding: 12 }}>
+      <TextInput placeholder="Search hunts" value={queryText} onChangeText={setQueryText} style={{ borderWidth: 1, borderColor: tint as string, padding: 8, borderRadius: 8, marginBottom: 12 }} />
 
       <FlatList
         data={filtered}
         keyExtractor={i => i.id}
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => router.push(`/hunt/${item.id}`)} style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' }}>
-            <Text style={{ fontSize: 16, fontWeight: '600' }}>{item.name}</Text>
-            {progressMap[item.id] != null && <Text style={{ marginTop: 6, color: '#333' }}>Progress: {progressMap[item.id]}%</Text>}
-            {item.description ? <Text style={{ marginTop: 4, color: '#666' }}>{item.description}</Text> : null}
-          </TouchableOpacity>
+          <Pressable onPress={() => router.push(`/hunt/${item.id}`)} style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: border as string }}>
+            <ThemedText style={{ fontSize: 16, fontWeight: '600' }}>{item.name}</ThemedText>
+            {progressMap[item.id] != null && <ThemedText style={{ marginTop: 6, color: tint as string }}>Progress: {progressMap[item.id]}%</ThemedText>}
+            {item.description ? <ThemedText style={{ marginTop: 4, color: tint as string }}>{item.description}</ThemedText> : null}
+          </Pressable>
         )}
-        ListEmptyComponent={() => <Text>No hunts found</Text>}
+        ListEmptyComponent={() => <ThemedText>No hunts found</ThemedText>}
       />
-    </View>
+    </ThemedView>
   );
 }
