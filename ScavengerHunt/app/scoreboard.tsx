@@ -7,9 +7,9 @@ import { getFirestore, collection, query, where, getDocs } from 'firebase/firest
 import { useRouter } from 'expo-router';
 
 type LeaderEntry = {
-  userId: string;
-  displayName: string | null;
-  profileImageUrl: string | null;
+  huntId: string;
+  displayName: string | null; // hunt name
+  coverImageUrl: string | null;
   completedCount: number;
 };
 
@@ -24,22 +24,21 @@ const ScoreboardScreen = () => {
 
     (async () => {
       try {
-        // 1) Query playerHunts where status == 'COMPLETED'
+        // 1) Query playerHunts where status == 'COMPLETED' and count per huntId
         const phQ = query(collection(db, 'playerHunts'), where('status', '==', 'COMPLETED'));
         const phSnap = await getDocs(phQ);
 
-        // 2) Group by userId and count
         const counts: Record<string, number> = {};
-        const userIds: Set<string> = new Set();
+        const huntIds: Set<string> = new Set();
         phSnap.forEach(doc => {
           const data = doc.data() as any;
-          const uid = data?.userId;
-          if (!uid) return;
-          userIds.add(uid);
-          counts[uid] = (counts[uid] || 0) + 1;
+          const hid = data?.huntId;
+          if (!hid) return;
+          huntIds.add(hid);
+          counts[hid] = (counts[hid] || 0) + 1;
         });
 
-        if (userIds.size === 0) {
+        if (huntIds.size === 0) {
           if (mounted) {
             setLeaders([]);
             setLoading(false);
@@ -47,24 +46,24 @@ const ScoreboardScreen = () => {
           return;
         }
 
-        // 3) Fetch user docs for these userIds in chunks
-        const ids = Array.from(userIds);
-        const userMap: Record<string, any> = {};
+        // 2) Fetch hunts docs for these huntIds in chunks
+        const ids = Array.from(huntIds);
+        const huntMap: Record<string, any> = {};
         for (let i = 0; i < ids.length; i += 10) {
           const chunk = ids.slice(i, i + 10);
-          const uQ = query(collection(db, 'users'));
-          const uSnap = await getDocs(uQ);
-          uSnap.forEach(u => {
-            const d = u.data() as any;
-            if (chunk.includes(u.id)) userMap[u.id] = d;
+          // fetch all hunts in this chunk by id
+          const hQ = query(collection(db, 'hunts'));
+          const hSnap = await getDocs(hQ);
+          hSnap.forEach(h => {
+            if (chunk.includes(h.id)) huntMap[h.id] = h.data();
           });
         }
 
-        // 4) Build the leader list
+        // 3) Build the leader list by hunts
         const list: LeaderEntry[] = ids.map(id => ({
-          userId: id,
-          displayName: userMap[id]?.displayName || null,
-          profileImageUrl: userMap[id]?.profileImageUrl || null,
+          huntId: id,
+          displayName: huntMap[id]?.name || huntMap[id]?.displayName || null,
+          coverImageUrl: huntMap[id]?.coverImageUrl || null,
           completedCount: counts[id] || 0,
         }));
 
@@ -92,19 +91,19 @@ const ScoreboardScreen = () => {
       ) : (
         <FlatList
           data={leaders}
-          keyExtractor={(i) => i.userId}
+          keyExtractor={(i) => i.huntId}
           renderItem={({ item, index }) => (
-            <Pressable onPress={() => router.push((`/user/${item.userId}`) as any)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee' }}>
+            <Pressable onPress={() => router.push((`/hunt/${item.huntId}`) as any)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee' }}>
               <ThemedText style={{ width: 36, fontWeight: '700' }}>{index + 1}</ThemedText>
-              {item.profileImageUrl ? (
-                <Image source={{ uri: item.profileImageUrl }} style={{ width: 48, height: 48, borderRadius: 24, marginRight: 12 }} />
+              {item.coverImageUrl ? (
+                <Image source={{ uri: item.coverImageUrl }} style={{ width: 48, height: 48, borderRadius: 6, marginRight: 12 }} />
               ) : (
-                <ThemedView style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: '#ddd', marginRight: 12, alignItems: 'center', justifyContent: 'center' }}>
+                <ThemedView style={{ width: 48, height: 48, borderRadius: 6, backgroundColor: '#ddd', marginRight: 12, alignItems: 'center', justifyContent: 'center' }}>
                   <ThemedText>{item.displayName ? item.displayName[0] : '?'}</ThemedText>
                 </ThemedView>
               )}
               <ThemedView style={{ flex: 1 }}>
-                <ThemedText style={{ fontWeight: '600' }}>{item.displayName || item.userId}</ThemedText>
+                <ThemedText style={{ fontWeight: '600' }}>{item.displayName || item.huntId}</ThemedText>
                 <ThemedText style={{ color: '#666' }}>{item.completedCount} completed</ThemedText>
               </ThemedView>
             </Pressable>
