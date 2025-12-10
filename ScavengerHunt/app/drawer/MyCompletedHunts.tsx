@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, ActivityIndicator, Pressable, SafeAreaView } from 'react-native';
+import { FlatList, ActivityIndicator, Pressable, SafeAreaView, Modal, View, TextInput, Button } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useRouter } from 'expo-router';
-import { getFirestore, collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
+import { getFirestore, collection, query, where, onSnapshot, getDocs, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import app from '@/lib/firebase-config';
 import { useSession } from '@/context';
 
@@ -17,6 +17,7 @@ export default function MyCompletedHunts() {
   const [loading, setLoading] = useState(true);
   const [completedHunts, setCompletedHunts] = useState<any[]>([]);
   const [progressMap, setProgressMap] = useState<Record<string, number | null>>({});
+  const [reviewsMap, setReviewsMap] = useState<Record<string, any | null>>({});
   const border = useThemeColor({}, 'icon');
   const tint = useThemeColor({}, 'tint');
   const text = useThemeColor({}, 'text');
@@ -112,6 +113,48 @@ export default function MyCompletedHunts() {
     return () => { mounted = false; };
   }, [completedHunts, user, db]);
 
+  // load this user's reviews for completed hunts so we can show Add/Edit state
+  useEffect(() => {
+    let mounted = true;
+    async function loadReviews() {
+      try {
+        const map: Record<string, any | null> = {};
+        const huntIds = completedHunts.map(h => h.huntId).filter(Boolean);
+        huntIds.forEach(id => map[id] = null);
+        if (!user || huntIds.length === 0) {
+          if (mounted) setReviewsMap(map);
+          return;
+        }
+
+        const uniqueIds = Array.from(new Set(huntIds));
+        const chunks: string[][] = [];
+        for (let i = 0; i < uniqueIds.length; i += 10) chunks.push(uniqueIds.slice(i, i + 10));
+
+        for (const chunk of chunks) {
+          const rQ = query(collection(db, 'reviews'), where('userId', '==', user.uid), where('huntId', 'in', chunk));
+          const rSnap = await getDocs(rQ);
+          rSnap.forEach(d => {
+            const data = d.data() as any;
+            if (!data?.huntId) return;
+            map[data.huntId] = { id: d.id, ...data };
+          });
+        }
+
+        if (mounted) setReviewsMap(map);
+      } catch (err) {
+        console.warn('MyCompletedHunts loadReviews failed', err);
+        if (mounted) setReviewsMap({});
+      }
+    }
+    loadReviews();
+    return () => { mounted = false; };
+  }, [completedHunts, user, db]);
+
+  // navigate to dedicated ReviewForm screen
+  function openReviewModal(huntId: string) {
+    router.push(`/review/ReviewForm?huntId=${huntId}`);
+  }
+
   if (loading) return <ThemedView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator/></ThemedView>;
 
   return (
@@ -127,13 +170,24 @@ export default function MyCompletedHunts() {
         data={completedHunts}
         keyExtractor={i => i.id}
         renderItem={({ item }) => (
-          <Pressable onPress={() => router.push(`/hunt/${item.huntId}`)} style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: border as string }}>
-            <ThemedText style={{ fontSize: 16, fontWeight: '600' }}>{item.huntName}</ThemedText>
-            {progressMap[item.huntId] != null && <ThemedText style={{ marginTop: 6, color: text as string }}>Progress: {progressMap[item.huntId]}%</ThemedText>}
+          <Pressable style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: border as string }}>
+            <Pressable onPress={() => router.push(`/hunt/${item.huntId}`)}>
+              <ThemedText style={{ fontSize: 16, fontWeight: '600' }}>{item.huntName}</ThemedText>
+              {progressMap[item.huntId] != null && <ThemedText style={{ marginTop: 6, color: text as string }}>Progress: {progressMap[item.huntId]}%</ThemedText>}
+            </Pressable>
+            <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <ThemedText style={{ color: tint as string }}>{reviewsMap[item.huntId] ? 'Reviewed' : 'Not reviewed'}</ThemedText>
+              <Pressable onPress={() => openReviewModal(item.huntId)} style={{ padding: 6 }}>
+                <ThemedText style={{ color: tint as string }}>{reviewsMap[item.huntId] ? 'Edit Review' : 'Add Review'}</ThemedText>
+              </Pressable>
+            </View>
           </Pressable>
         )}
         ListEmptyComponent={() => <ThemedText>No completed hunts yet</ThemedText>}
       />
+
+  {/* Review uses dedicated ReviewForm screen now */}
+
       </SafeAreaView>
     </ThemedView>
   );

@@ -27,6 +27,7 @@ export default function HuntDiscovery() {
   const [loading, setLoading] = useState(true);
   const [hunts, setHunts] = useState<Hunt[]>([]);
   const [progressMap, setProgressMap] = useState<Record<string, number | null>>({});
+  const [ratingsMap, setRatingsMap] = useState<Record<string, { avg: number; count: number } | null>>({});
 
   useEffect(() => {
     const q = query(collection(db, 'hunts'), where('isVisible', '==', true));
@@ -118,6 +119,54 @@ export default function HuntDiscovery() {
     return () => { mounted = false; };
   }, [user, hunts, db]);
 
+  // load average rating and counts for displayed hunts
+  useEffect(() => {
+    let mounted = true;
+    async function loadRatings() {
+      try {
+        const map: Record<string, { avg: number; count: number } | null> = {};
+        const huntIds = hunts.map(h => h.id);
+        huntIds.forEach(id => map[id] = null);
+        if (huntIds.length === 0) {
+          if (mounted) setRatingsMap(map);
+          return;
+        }
+
+        const uniqueIds = Array.from(new Set(huntIds));
+        const chunks: string[][] = [];
+        for (let i = 0; i < uniqueIds.length; i += 10) chunks.push(uniqueIds.slice(i, i + 10));
+
+        const sums: Record<string, number> = {};
+        const counts: Record<string, number> = {};
+
+        for (const chunk of chunks) {
+          const rQ = query(collection(db, 'reviews'), where('huntId', 'in', chunk));
+          const rSnap = await getDocs(rQ);
+          rSnap.forEach(d => {
+            const data = d.data() as any;
+            if (!data?.huntId) return;
+            const hid = data.huntId;
+            const r = typeof data.rating === 'number' ? data.rating : parseFloat(data.rating) || 0;
+            sums[hid] = (sums[hid] || 0) + r;
+            counts[hid] = (counts[hid] || 0) + 1;
+          });
+        }
+
+        for (const hid of uniqueIds) {
+          const c = counts[hid] || 0;
+          map[hid] = c > 0 ? { avg: Math.round((sums[hid] / c) * 10) / 10, count: c } : null;
+        }
+
+        if (mounted) setRatingsMap(map);
+      } catch (err) {
+        console.warn('HuntDiscovery loadRatings failed', err);
+        if (mounted) setRatingsMap({});
+      }
+    }
+    loadRatings();
+    return () => { mounted = false; };
+  }, [hunts, db]);
+
   const filtered = useMemo(() => {
     const t = queryText.trim().toLowerCase();
     if (!t) return hunts;
@@ -137,6 +186,9 @@ export default function HuntDiscovery() {
           <Pressable onPress={() => router.push(`/hunt/${item.id}`)} style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: border as string }}>
             <ThemedText style={{ fontSize: 16, fontWeight: '600' }}>{item.name}</ThemedText>
             {progressMap[item.id] != null && <ThemedText style={{ marginTop: 6, color: tint as string }}>Progress: {progressMap[item.id]}%</ThemedText>}
+            {ratingsMap[item.id] ? (
+              <ThemedText style={{ marginTop: 6, color: tint as string }}>Average Rating: {ratingsMap[item.id]?.avg} ★ ({ratingsMap[item.id]?.count} Rating(s))</ThemedText>
+            ) : null}
             {item.description ? <ThemedText style={{ marginTop: 4, color: tint as string }}>{item.description}</ThemedText> : null}
           </Pressable>
         )}
